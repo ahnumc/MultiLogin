@@ -1,0 +1,140 @@
+package moe.caa.multilogin.core.handle
+
+import moe.caa.multilogin.api.data.MultiLoginPlayerData
+import moe.caa.multilogin.api.internal.handle.HandleResult
+import moe.caa.multilogin.api.internal.handle.HandlerAPI
+import moe.caa.multilogin.api.internal.logger.LoggerProvider
+import moe.caa.multilogin.api.internal.plugin.IPlayer
+import moe.caa.multilogin.api.internal.util.Pair
+import moe.caa.multilogin.api.profile.GameProfile
+import moe.caa.multilogin.api.service.IService
+import moe.caa.multilogin.core.configuration.service.BaseServiceConfig
+import moe.caa.multilogin.core.main.MultiCore
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+
+/**
+ * 数据缓存中心
+ */
+class PlayerHandler(private val core: MultiCore) : HandlerAPI {
+    // inGameUUID \ Entry
+    private val cache: MutableMap<UUID, Entry> = ConcurrentHashMap()
+
+    // inGameUUID \ Entry
+    val loginCache: MutableMap<UUID, Entry> = ConcurrentHashMap()
+
+    override fun pushPlayerQuitGame(inGameUUID: UUID?, username: String?): HandleResult =
+        HandleResult(HandleResult.Type.NONE, null)
+
+    override fun pushPlayerJoinGame(inGameUUID: UUID?, username: String?): HandleResult {
+        val remove = loginCache.remove(inGameUUID ?: return HandleResult(HandleResult.Type.NONE, null))
+        if (remove == null) {
+            if (core.pluginConfig.forceUseLogin) {
+                return HandleResult(
+                    HandleResult.Type.KICK,
+                    core.languageHandler.getMessage("auth_handler_need_use_login")
+                )
+            }
+            LoggerProvider.logger.warn(
+                "The player with in game UUID $inGameUUID and name $username is not logged into the server by MultiLogin, some features will be disabled for him."
+            )
+        } else {
+            val l = System.currentTimeMillis() - remove.signTimeMillis
+            if (l > 5 * 1000) {
+                LoggerProvider.logger.warn(
+                    "Players with in game UUID $inGameUUID and name $username are taking too long to log in after verification, reached $l milliseconds. Is it the same person?"
+                )
+            }
+            cache[inGameUUID] = remove
+        }
+
+        return HandleResult(HandleResult.Type.NONE, null)
+    }
+
+    override fun callPlayerJoinGame(player: IPlayer) {
+        if (!core.pluginConfig.welcomeMsg) return
+
+        core.plugin.runServer.scheduler.runTaskAsync({
+            val pair = getPlayerOnlineProfile0(player.uniqueId)
+            val msg = if (pair == null) {
+                core.languageHandler.getMessage(
+                    "welcome_msg_to_unknown",
+                    Pair<Any?, Any?>("profile_name", player.name),
+                    Pair<Any?, Any?>("profile_uuid", player.name)
+                )
+            } else {
+                core.languageHandler.getMessage(
+                    "welcome_msg",
+                    Pair<Any?, Any?>("online_name", pair.value1?.name),
+                    Pair<Any?, Any?>("online_uuid", pair.value1?.id),
+                    Pair<Any?, Any?>("service_name", pair.value2?.serviceName),
+                    Pair<Any?, Any?>("service_id", pair.value2?.serviceId),
+                    Pair<Any?, Any?>("profile_name", player.name),
+                    Pair<Any?, Any?>("profile_uuid", player.uniqueId)
+                )
+            }
+            player.sendMessagePL(msg)
+        }, 3000)
+    }
+
+    fun getPlayerData(inGameUUID: UUID?): MultiLoginPlayerData? = cache[inGameUUID]
+
+    override fun getPlayerOnlineProfile(inGameUUID: UUID?): Pair<GameProfile?, Int?>? {
+        val entry = cache[inGameUUID] ?: return null
+        return Pair(entry.onlineProfileData, entry.serviceConfig?.serviceId)
+    }
+
+    fun getPlayerOnlineProfile0(inGameUUID: UUID?): Pair<GameProfile?, BaseServiceConfig?>? {
+        val entry = cache[inGameUUID] ?: return null
+        return Pair(entry.onlineProfileData, entry.serviceConfig)
+    }
+
+    override fun getInGameUUID(onlineUUID: UUID?, serviceId: Int): UUID? =
+        cache.entries.find { (_, v) ->
+            v?.onlineProfileData?.id == onlineUUID && v?.serviceConfig?.serviceId == serviceId
+        }?.key
+
+    override fun getServiceName(serviceId: Int): String? =
+        core.pluginConfig.serviceIdMap[serviceId]?.serviceName
+
+    fun register() {
+        core.plugin.runServer.scheduler.runTaskAsyncTimer({
+            val onlinePlayerUUIDs = core.plugin.runServer.playerManager.onlinePlayers
+                .mapTo(mutableSetOf()) { it.uniqueId }
+
+            val noExists = cache.entries.filter { (key, _) -> key !in onlinePlayerUUIDs }.toSet()
+
+            try {
+                Thread.sleep(10000)
+            } catch (e: InterruptedException) {
+                LoggerProvider.logger.error("An exception occurred on the delayed cache clearing.", e)
+            }
+
+            for ((key, value) in noExists) {
+                if (cache[key] != value) continue
+                cache.remove(key)
+            }
+        }, 0, 1000 * 60)
+    }
+
+    class Entry(
+        val onlineProfileData: GameProfile,
+        val serviceConfig: BaseServiceConfig,
+        val signTimeMillis: Long
+    ) : MultiLoginPlayerData {
+        override fun getOnlineProfile(): GameProfile = onlineProfileData
+
+        override val loginService: IService
+            get() = serviceConfig
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Entry) return false
+            return serviceConfig == other.serviceConfig
+                    && signTimeMillis == other.signTimeMillis
+                    && onlineProfileData == other.onlineProfileData
+        }
+
+        override fun hashCode(): Int = arrayOf(onlineProfileData, serviceConfig, signTimeMillis).contentHashCode()
+    }
+}
