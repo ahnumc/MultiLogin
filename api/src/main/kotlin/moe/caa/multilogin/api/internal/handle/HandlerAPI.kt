@@ -1,56 +1,54 @@
-package moe.caa.multilogin.api.internal.handle;
+package moe.caa.multilogin.api.internal.handle
 
-import moe.caa.multilogin.api.profile.GameProfile;
-import moe.caa.multilogin.api.internal.plugin.IPlayer;
-import moe.caa.multilogin.api.internal.util.Pair;
-import org.jetbrains.annotations.ApiStatus;
-
-import java.util.UUID;
+import moe.caa.multilogin.api.internal.plugin.IPlayer
+import moe.caa.multilogin.api.internal.util.Pair
+import moe.caa.multilogin.api.profile.GameProfile
+import org.jetbrains.annotations.ApiStatus
+import java.util.*
 
 /**
  * 简单通讯 API，所操作玩家需要在线。
  */
 @ApiStatus.Internal
-public interface HandlerAPI {
-
+interface HandlerAPI {
     /**
      * 提交一个玩家退出事件
-     *
+     * 
      * @param inGameUUID 玩家的游戏内 UUID
      */
-    HandleResult pushPlayerQuitGame(UUID inGameUUID, String username);
+    fun pushPlayerQuitGame(inGameUUID: UUID?, username: String?): HandleResult
 
     /**
      * 提交一个玩家加入事件
-     *
+     * 
      * @param inGameUUID 玩家的游戏内 UUID
      */
-    HandleResult pushPlayerJoinGame(UUID inGameUUID, String username);
+    fun pushPlayerJoinGame(inGameUUID: UUID?, username: String?): HandleResult
 
-    void callPlayerJoinGame(IPlayer player);
+    fun callPlayerJoinGame(player: IPlayer)
 
     /**
      * 获得玩家的在线游戏档案
-     *
+     * 
      * @param inGameUUID 玩家的游戏内 UUID
      * @return 一个表示玩家在线数据和验证它的 Yggdrasil ID 的复合类
      */
-    Pair<GameProfile, Integer> getPlayerOnlineProfile(UUID inGameUUID);
+    fun getPlayerOnlineProfile(inGameUUID: UUID?): Pair<GameProfile?, Int?>?
 
     /**
      * 获得玩家游戏内 UUID
-     *
+     * 
      * @param onlineUUID 玩家的在线 UUID
      * @param serviceId  service id
      * @return 玩家游戏内 UUID
      */
-    UUID getInGameUUID(UUID onlineUUID, int serviceId);
+    fun getInGameUUID(onlineUUID: UUID?, serviceId: Int): UUID?
 
     /**
      * 获得 service name
-     *
+     * 
      * @param serviceId service id
      * @return Yggdrasil name
      */
-    String getServiceName(int serviceId);
+    fun getServiceName(serviceId: Int): String?
 }
