@@ -132,7 +132,8 @@ public class MultiInitialLoginSessionHandler {
                         VelocityServer.class,
                         LoginInboundConnection.class,
                         com.velocitypowered.api.util.GameProfile.class,
-                        boolean.class
+                        boolean.class,
+                        String.class
                 )
         ));
     }
@@ -218,7 +219,7 @@ public class MultiInitialLoginSessionHandler {
                                 try {
                                     this.mcConnection.setActiveSessionHandler(StateRegistry.LOGIN,
                                             (AuthSessionHandler) authSessionHandler_allArgsConstructor.invoke(
-                                                    this.server, inbound, generateGameProfile(finalGameProfile), true
+                                                    this.server, inbound, generateGameProfile(finalGameProfile), true, serverId
                                             ));
                                 } catch (Throwable e) {
                                     throw new RuntimeException(e);
