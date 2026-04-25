@@ -3,11 +3,21 @@ import org.apache.tools.ant.filters.ReplaceTokens
 import java.text.SimpleDateFormat
 
 
+buildscript {
+    ext.kotlin_version = '2.2.0'
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.8.0' apply false
 }
 
 apply from: './constant.gradle'
+apply plugin: 'kotlin'
 
 allprojects {
     apply plugin: "java"
@@ -47,6 +57,8 @@ subprojects {
 
         compileOnly("org.jetbrains:annotations:24.1.0")
         annotationProcessor("org.jetbrains:annotations:24.1.0")
+
+        implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
         try (def scanner = new Scanner(file.libraries as File)) {
             while (scanner.hasNextLine()) {
@@ -106,7 +118,14 @@ subprojects {
     }
 
     compileJava {
-        sourceCompatibility = targetCompatibility = JavaVersion.VERSION_21
     }
+}
+repositories {
+    mavenCentral()
+}
+dependencies {
+}
+kotlin {
+    jvmToolchain(21)
 }
 

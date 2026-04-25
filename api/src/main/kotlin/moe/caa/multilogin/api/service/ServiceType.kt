@@ -1,13 +1,12 @@
-package moe.caa.multilogin.api.service;
+package moe.caa.multilogin.api.service
 
-import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.ApiStatus
 
 /**
  * 验证服务类型
  */
 @ApiStatus.NonExtendable
-public enum ServiceType {
-
+enum class ServiceType(val isYggdrasilService: Boolean) {
     /**
      * 官方 Yggdrasil Java 版账号验证服务（Yggdrasil 实现）。
      */
@@ -26,15 +25,5 @@ public enum ServiceType {
     /**
      * Geyser 的 Floodgate （Xbox账号）验证服务。
      */
-    FLOODGATE(false);
-
-    private final boolean yggdrasilService;
-
-    ServiceType(boolean yggdrasilService) {
-        this.yggdrasilService = yggdrasilService;
-    }
-
-    public boolean isYggdrasilService() {
-        return yggdrasilService;
-    }
+    FLOODGATE(false)
 }

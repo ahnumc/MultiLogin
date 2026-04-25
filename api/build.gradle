@@ -1,6 +1,7 @@
 plugins {
     id 'maven-publish'
     id 'com.gradleup.shadow' version '9.1.0'
+    id 'org.jetbrains.kotlin.jvm'
 }
 
 
@@ -20,8 +21,6 @@ shadowJar{
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
     withSourcesJar()
 }
 
@@ -32,6 +31,12 @@ publishing {
 
         from components.java
     }
+}
+repositories {
+    mavenCentral()
+}
+kotlin {
+    jvmToolchain(21)
 }
 //publishing {
 //    publications {

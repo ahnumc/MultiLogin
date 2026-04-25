@@ -1,5 +1,6 @@
 plugins {
     id 'com.gradleup.shadow' version '9.1.0'
+    id 'org.jetbrains.kotlin.jvm'
 }
 
 repositories {
@@ -13,8 +14,6 @@ repositories {
 
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
 }
 
 dependencies {
@@ -96,4 +95,7 @@ tasks.register('getLatestVelocity', Copy) {
 
 artifacts {
     archives shadowJar
+}
+kotlin {
+    jvmToolchain(21)
 }

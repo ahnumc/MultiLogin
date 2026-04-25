@@ -1,5 +1,6 @@
 plugins {
     id 'com.gradleup.shadow'
+    id 'org.jetbrains.kotlin.jvm'
 }
 
 repositories {
@@ -13,8 +14,6 @@ repositories {
 
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
 }
 
 dependencies {
@@ -37,4 +36,7 @@ shadowJar {
 
 artifacts {
     archives shadowJar
+}
+kotlin {
+    jvmToolchain(21)
 }
