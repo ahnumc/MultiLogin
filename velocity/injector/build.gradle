@@ -37,6 +37,7 @@ shadowJar {
 artifacts {
     archives shadowJar
 }
+
 kotlin {
     jvmToolchain(21)
 }

@@ -12,6 +12,7 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
+
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.8.0' apply false
 }
@@ -30,7 +31,7 @@ allprojects {
             } else {
                 return "unknown"
             }
-        } catch (Exception e) {
+        } catch (Exception ignored) {
             return "unknown"
         }
     }
@@ -52,9 +53,6 @@ subprojects {
     }
 
     dependencies {
-        compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.38'
-        annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.38'
-
         compileOnly("org.jetbrains:annotations:24.1.0")
         annotationProcessor("org.jetbrains:annotations:24.1.0")
 
@@ -65,7 +63,7 @@ subprojects {
                 def line = scanner.nextLine()
                 if (line.trim().length() == 0 || (line.charAt(0) as String) == '#') continue
                 def args = line.split("\\s+")
-                compileOnly group: args[0], name: args[1], version: args[2]
+                compileOnly "${args[0]}:${args[1]}:${args[2]}"
             }
         }
     }
@@ -82,7 +80,7 @@ subprojects {
             }
         }
 
-        def ver;
+        def ver
         def env = System.getProperty("env", "AUTO").toLowerCase()
         if (env == "final") {
             ver = (project.plugin_version as String)
