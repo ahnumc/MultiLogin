@@ -19,29 +19,29 @@ class AssignInGameFlows(private val core: MultiCore) : BaseFlows<ValidateContext
         val response = requireNotNull(authResult.response)
         val onlineUUID = requireNotNull(response.id)
 
-        var inGameUUID = core.sqlManager.userDataTable!!.getInGameUUID(onlineUUID, serviceConfig.serviceId)
+        var inGameUUID = core.sqlManager.userDataTable.getInGameUUID(onlineUUID, serviceConfig.serviceId)
 
         val loginName = response.name
         if (inGameUUID == null) {
             inGameUUID = requireNotNull(serviceConfig.initUUID).generateUUID(onlineUUID, loginName)
 
             synchronized(AssignInGameFlows::class.java) {
-                while (core.sqlManager.inGameProfileTable!!.dataExists(requireNotNull(inGameUUID))) {
+                while (core.sqlManager.inGameProfileTable.dataExists(requireNotNull(inGameUUID))) {
                     LoggerProvider.logger.warn("UUID $inGameUUID has been used and will take a random value.")
                     inGameUUID = UUID.randomUUID()
                 }
-                core.sqlManager.userDataTable!!.setInGameUUID(onlineUUID, serviceConfig.serviceId, inGameUUID)
+                core.sqlManager.userDataTable.setInGameUUID(onlineUUID, serviceConfig.serviceId, inGameUUID)
             }
         }
         val resolvedInGameUUID = requireNotNull(inGameUUID)
         if (core.pluginConfig.autoNameChange && ctx.onlineNameUpdated) {
-            val username = core.sqlManager.inGameProfileTable!!.getUsername(resolvedInGameUUID)
-            username?.takeUnless(::isEmpty)?.let { core.sqlManager.inGameProfileTable!!.eraseUsername(it) }
+            val username = core.sqlManager.inGameProfileTable.getUsername(resolvedInGameUUID)
+            username?.takeUnless(::isEmpty)?.let { core.sqlManager.inGameProfileTable.eraseUsername(it) }
         }
 
-        val exist = core.sqlManager.inGameProfileTable!!.dataExists(resolvedInGameUUID)
+        val exist = core.sqlManager.inGameProfileTable.dataExists(resolvedInGameUUID)
         if (exist) {
-            val username = core.sqlManager.inGameProfileTable!!.getUsername(resolvedInGameUUID)
+            val username = core.sqlManager.inGameProfileTable.getUsername(resolvedInGameUUID)
             if (!isEmpty(username)) {
                 ctx.inGameProfile.id = resolvedInGameUUID
                 ctx.inGameProfile.name = username
@@ -56,7 +56,7 @@ class AssignInGameFlows(private val core: MultiCore) : BaseFlows<ValidateContext
         if (core.pluginConfig.nameCorrect) {
             var modified = false
             var ownerUUID: UUID?
-            while ((core.sqlManager.inGameProfileTable!!.getInGameUUIDIgnoreCase(fixName)
+            while ((core.sqlManager.inGameProfileTable.getInGameUUIDIgnoreCase(fixName)
                     .also { ownerUUID = it }) != null
             ) {
                 if (ownerUUID == inGameUUID) break
@@ -82,7 +82,7 @@ class AssignInGameFlows(private val core: MultiCore) : BaseFlows<ValidateContext
 
         if (exist) {
             try {
-                core.sqlManager.inGameProfileTable!!.updateUsername(resolvedInGameUUID, fixName)
+                core.sqlManager.inGameProfileTable.updateUsername(resolvedInGameUUID, fixName)
                 ctx.inGameProfile.id = resolvedInGameUUID
                 ctx.inGameProfile.name = fixName
                 return Signal.PASSED
@@ -97,7 +97,7 @@ class AssignInGameFlows(private val core: MultiCore) : BaseFlows<ValidateContext
             }
         } else {
             try {
-                core.sqlManager.inGameProfileTable!!.insertNewData(resolvedInGameUUID, fixName)
+                core.sqlManager.inGameProfileTable.insertNewData(resolvedInGameUUID, fixName)
                 ctx.inGameProfile.id = resolvedInGameUUID
                 ctx.inGameProfile.name = fixName
                 return Signal.PASSED

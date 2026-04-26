@@ -1,29 +1,27 @@
-package moe.caa.multilogin.api.service;
+package moe.caa.multilogin.api.service
 
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.ApiStatus
 
 /**
  * 表示一个验证服务器
  */
 @ApiStatus.NonExtendable
-public interface IService {
-
+interface IService {
     /**
      * 返回这个验证服务ID
      * @return 这个验证服务ID
      */
-    int getServiceId();
+    val serviceId: Int
 
     /**
      * 返回验证服务名字
      * @return 验证服务名字
      */
-    @NotNull String getServiceName();
+    val serviceName: String
 
     /**
      * 返回验证服务类型
      * @return 验证服务类型
      */
-    @NotNull ServiceType getServiceType();
+    val serviceType: ServiceType
 }

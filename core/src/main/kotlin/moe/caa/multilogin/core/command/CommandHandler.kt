@@ -30,7 +30,7 @@ class CommandHandler(core: MultiCore) : CommandAPI {
 
     fun init() {
         dispatcher.register(RootCommand(this).register(literal("multilogin")))
-        builtInExceptions = BuiltInExceptions(requireNotNull(core))
+        builtInExceptions = BuiltInExceptions(core)
         CommandSyntaxException.BUILT_IN_EXCEPTIONS = builtInExceptions
     }
 
@@ -39,7 +39,7 @@ class CommandHandler(core: MultiCore) : CommandAPI {
     }
 
     override fun execute(sender: ISender, args: String) {
-        val currentCore = requireNotNull(core)
+        val currentCore = core
         currentCore.plugin.runServer.scheduler.runTaskAsync({
             try {
                 dispatcher.execute(args, sender)
@@ -89,7 +89,7 @@ class CommandHandler(core: MultiCore) : CommandAPI {
     fun requirePlayer(context: CommandContext<ISender?>) {
         val sender = requireNotNull(context.source)
         if (!sender.isPlayer) {
-            throw requireNotNull(builtInExceptions).requirePlayer().create()
+            throw builtInExceptions.requirePlayer().create()
         }
     }
 
@@ -97,31 +97,31 @@ class CommandHandler(core: MultiCore) : CommandAPI {
     fun requirePlayerAndNoSelf(context: CommandContext<ISender?>, player: IPlayer) {
         val sender = requireNotNull(context.source)
         if (!sender.isPlayer) {
-            throw requireNotNull(builtInExceptions).requirePlayer().create()
+            throw builtInExceptions.requirePlayer().create()
         }
         if (requireNotNull(sender.asPlayer).uniqueId == player.uniqueId) {
-            throw requireNotNull(builtInExceptions).noSelf().create()
+            throw builtInExceptions.noSelf().create()
         }
     }
 
     @Throws(CommandSyntaxException::class)
     fun requireDataCacheArgumentSelf(context: CommandContext<ISender?>): Pair<GameProfile?, Int?> {
         requirePlayer(context)
-        val currentCore = requireNotNull(core)
+        val currentCore = core
         val player = requireNotNull(requireNotNull(context.source).asPlayer)
         return currentCore.playerHandler.getPlayerOnlineProfile(player.uniqueId)
-            ?: throw requireNotNull(builtInExceptions).cacheNotFoundSelf().create()
+            ?: throw builtInExceptions.cacheNotFoundSelf().create()
     }
 
     @Throws(CommandSyntaxException::class)
     fun requireDataCacheArgumentOther(player: IPlayer): Pair<GameProfile?, Int?> =
-        requireNotNull(core).playerHandler.getPlayerOnlineProfile(player.uniqueId)
-            ?: throw requireNotNull(builtInExceptions).cacheNotFoundOther().create(player.uniqueId, player.name)
+        core.playerHandler.getPlayerOnlineProfile(player.uniqueId)
+            ?: throw builtInExceptions.cacheNotFoundOther().create(player.uniqueId, player.name)
 
     companion object {
-        var core: MultiCore? = null
+        lateinit var core: MultiCore
             private set
-        var builtInExceptions: BuiltInExceptions? = null
+        lateinit var builtInExceptions: BuiltInExceptions
             private set
     }
 }
@@ -133,7 +133,7 @@ fun CommandHandler.submitConfirm(
     vararg args: Pair<Any?, Any?>,
     action: () -> Unit
 ) {
-    val currentCore = requireNotNull(CommandHandler.core)
+    val currentCore = CommandHandler.core
     secondaryConfirmationHandler.submit(
         sender,
         object : SecondaryConfirmationHandler.CallbackConfirmCommand { override fun confirm() = action() },

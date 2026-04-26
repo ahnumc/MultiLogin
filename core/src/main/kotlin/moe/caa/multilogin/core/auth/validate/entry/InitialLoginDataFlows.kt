@@ -13,7 +13,7 @@ class InitialLoginDataFlows(private val core: MultiCore) : BaseFlows<ValidateCon
         val response = requireNotNull(authResult.response)
         val serviceConfig = requireNotNull(authResult.serviceConfig)
         val onlineUUID = requireNotNull(response.id)
-        val dataTable = core.sqlManager.userDataTable!!
+        val dataTable = core.sqlManager.userDataTable
         if (!dataTable.dataExists(onlineUUID, serviceConfig.serviceId)) {
             dataTable.insertNewData(onlineUUID, serviceConfig.serviceId, response.name, null)
         } else {
