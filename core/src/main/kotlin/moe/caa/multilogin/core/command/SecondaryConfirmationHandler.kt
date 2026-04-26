@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicReference
  * 二次确认快处工具
  */
 class SecondaryConfirmationHandler {
-    private val concurrentHashMap: MutableMap<IPlayer, ConfirmEntry> = ConcurrentHashMap()
+    private val playerConfirmations: MutableMap<IPlayer, ConfirmEntry> = ConcurrentHashMap()
     private val consoleConfirm: AtomicReference<ConfirmEntry?> = AtomicReference()
 
     /**
@@ -23,7 +23,8 @@ class SecondaryConfirmationHandler {
     ) {
         val currentCore = CommandHandler.core
         when {
-            sender.isPlayer -> concurrentHashMap[requireNotNull(sender.asPlayer)] = ConfirmEntry(callbackConfirmCommand)
+            sender.isPlayer -> playerConfirmations[requireNotNull(sender.asPlayer)] =
+                ConfirmEntry(callbackConfirmCommand)
             sender.isConsole -> consoleConfirm.set(ConfirmEntry(callbackConfirmCommand))
             else -> {
                 sender.sendMessagePL(currentCore.languageHandler.getMessage("command_message_confirm_unidentified"))
@@ -46,21 +47,20 @@ class SecondaryConfirmationHandler {
     @Throws(Exception::class)
     fun confirm(sender: ISender) {
         val currentCore = CommandHandler.core
-        concurrentHashMap.values.removeIf { it.isInvalid }
-        consoleConfirm.updateAndGet { it?.takeUnless { e -> e.isInvalid } }
+        playerConfirmations.values.removeIf(ConfirmEntry::isInvalid)
+        consoleConfirm.updateAndGet { it?.takeUnless(ConfirmEntry::isInvalid) }
 
         when {
             sender.isPlayer -> {
                 val player = requireNotNull(sender.asPlayer)
-                val entry = concurrentHashMap.remove(player) ?: run {
+                val entry = playerConfirmations.remove(player) ?: run {
                     sender.sendMessagePL(currentCore.languageHandler.getMessage("command_message_confirm_not_found"))
                     return
                 }
                 entry.confirm()
             }
             sender.isConsole -> {
-                val entry = consoleConfirm.getAndSet(null)
-                if (entry == null) {
+                val entry = consoleConfirm.getAndSet(null) ?: run {
                     sender.sendMessagePL(currentCore.languageHandler.getMessage("command_message_confirm_not_found"))
                     return
                 }
@@ -70,16 +70,16 @@ class SecondaryConfirmationHandler {
         }
     }
 
-    interface CallbackConfirmCommand {
+    fun interface CallbackConfirmCommand {
         @Throws(Exception::class)
         fun confirm()
     }
 
     private class ConfirmEntry(private val callbackConfirmCommand: CallbackConfirmCommand) {
-        private val subTime: Long = System.currentTimeMillis()
+        private val submitTimeMillis = System.currentTimeMillis()
 
         val isInvalid: Boolean
-            get() = subTime + CommandHandler.core.pluginConfig
+            get() = submitTimeMillis + CommandHandler.core.pluginConfig
                 .confirmCommandValidTimeMills < System.currentTimeMillis()
 
         @Throws(Exception::class)

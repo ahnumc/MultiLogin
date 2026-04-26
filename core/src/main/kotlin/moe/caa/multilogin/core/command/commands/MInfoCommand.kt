@@ -21,8 +21,7 @@ class MInfoCommand(private val handler: CommandHandler) {
     }
 
     private fun executeInfo(context: CommandContext<ISender?>): Int {
-        val players = OnlinePlayerArgumentType.getPlayers(context, "player")
-        processInfoCommand(context, players)
+        processInfoCommand(context, OnlinePlayerArgumentType.getPlayers(context, "player"))
         return 0
     }
 
@@ -33,7 +32,7 @@ class MInfoCommand(private val handler: CommandHandler) {
         return 0
     }
 
-    private fun processInfoCommand(context: CommandContext<ISender?>, players: MutableSet<IPlayer>) {
+    private fun processInfoCommand(context: CommandContext<ISender?>, players: Set<IPlayer>) {
         val sender = requireNotNull(context.source)
         val core = CommandHandler.core
         if (players.size > 1) {
@@ -45,16 +44,7 @@ class MInfoCommand(private val handler: CommandHandler) {
         }
 
         for (player in players) {
-            val profile = core.playerHandler.getPlayerOnlineProfile(player.uniqueId)
-            if (profile == null) {
-                sender.sendMessagePL(
-                    core.languageHandler.getMessage(
-                        "command_message_info_unknown",
-                        "name" to player.name,
-                        "uuid" to player.uniqueId
-                    )
-                )
-            } else {
+            core.playerHandler.getPlayerOnlineProfile(player.uniqueId)?.let { profile ->
                 val onlineProfile = profile.profile
                 val serviceId = profile.serviceId
                 val serviceName = core.pluginConfig.serviceIdMap[serviceId]?.serviceName
@@ -69,7 +59,13 @@ class MInfoCommand(private val handler: CommandHandler) {
                     "online_uuid" to onlineProfile?.id
                 )
                 sender.sendMessagePL(message)
-            }
+            } ?: sender.sendMessagePL(
+                core.languageHandler.getMessage(
+                    "command_message_info_unknown",
+                    "name" to player.name,
+                    "uuid" to player.uniqueId
+                )
+            )
         }
     }
 }

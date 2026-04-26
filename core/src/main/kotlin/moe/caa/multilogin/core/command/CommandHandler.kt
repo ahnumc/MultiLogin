@@ -57,8 +57,8 @@ class CommandHandler(core: MultiCore) : CommandAPI {
     }
 
     override fun tabComplete(sender: ISender, args: Array<String>): MutableList<String> {
-        if (args.size == 1) {
-            return tabComplete(sender, args[0] + " ")
+        args.singleOrNull()?.let { arg ->
+            return tabComplete(sender, "$arg ")
         }
         return tabComplete(sender, args.joinToString(" "))
     }

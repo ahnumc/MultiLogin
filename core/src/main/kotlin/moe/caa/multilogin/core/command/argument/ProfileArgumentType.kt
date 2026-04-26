@@ -21,37 +21,34 @@ class ProfileArgumentType : ArgumentType<ProfileArgumentType.ProfileArgument> {
     override fun parse(reader: StringReader): ProfileArgument {
         val i = reader.cursor
 
-        val nameOrUuid: String = StringArgumentType.readString(reader)
+        val nameOrUuid = StringArgumentType.readString(reader)
 
         val currentCore = CommandHandler.core
         val table = currentCore.sqlManager.inGameProfileTable
 
-        var uuid = getUuidOrNull(nameOrUuid)
-        if (uuid == null) {
-            uuid = table.getInGameUUIDIgnoreCase(nameOrUuid)
-            if (uuid == null) {
+        getUuidOrNull(nameOrUuid)?.let { uuid ->
+            val username = table.getUsername(uuid) ?: run {
                 reader.cursor = i
                 throw UniversalCommandExceptionType.create(
                     currentCore.languageHandler.getMessage(
-                        "command_message_profile_not_found_by_name",
-                        "name" to nameOrUuid
+                        "command_message_profile_not_found_by_uuid",
+                        "uuid" to uuid
                     ), reader
                 )
             }
-
-            return ProfileArgument(uuid, table.getUsername(uuid))
+            return ProfileArgument(uuid, username)
         }
-        val username = table.getUsername(uuid)
-        if (username == null) {
+
+        val uuid = table.getInGameUUIDIgnoreCase(nameOrUuid) ?: run {
             reader.cursor = i
             throw UniversalCommandExceptionType.create(
                 currentCore.languageHandler.getMessage(
-                    "command_message_profile_not_found_by_uuid",
-                    "uuid" to uuid
+                    "command_message_profile_not_found_by_name",
+                    "name" to nameOrUuid
                 ), reader
             )
         }
-        return ProfileArgument(uuid, username)
+        return ProfileArgument(uuid, table.getUsername(uuid))
     }
 
     data class ProfileArgument(
@@ -63,19 +60,18 @@ class ProfileArgumentType : ArgumentType<ProfileArgumentType.ProfileArgument> {
         context: CommandContext<S?>?,
         builder: SuggestionsBuilder
     ): CompletableFuture<Suggestions?>? {
-        for (key in CommandHandler.core.plugin.runServer.playerManager.onlinePlayers) {
-            if (key.name.lowercase(Locale.ROOT).startsWith(builder.remainingLowerCase)) builder.suggest(key.name)
+        CommandHandler.core.plugin.runServer.playerManager.onlinePlayers.forEach { player ->
+            if (player.name.lowercase(Locale.ROOT).startsWith(builder.remainingLowerCase)) {
+                builder.suggest(player.name)
+            }
         }
         return builder.buildFuture()
     }
 
     companion object {
-        fun profile(): ProfileArgumentType {
-            return ProfileArgumentType()
-        }
+        fun profile(): ProfileArgumentType = ProfileArgumentType()
 
-        fun getProfile(context: CommandContext<*>, name: String?): ProfileArgument {
-            return context.getArgument(name, ProfileArgument::class.java)
-        }
+        fun getProfile(context: CommandContext<*>, name: String?): ProfileArgument =
+            context.getArgument(name, ProfileArgument::class.java)
     }
 }

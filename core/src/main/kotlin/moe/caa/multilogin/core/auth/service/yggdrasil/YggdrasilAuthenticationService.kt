@@ -20,17 +20,15 @@ class YggdrasilAuthenticationService(private val core: MultiCore) {
             .toSet()
         if (ids.isEmpty()) return YggdrasilAuthenticationResult.ofNoService()
 
-        val primaries = mutableSetOf<Int?>()
+        val primaries = mutableSetOf<Int>()
 
-        if (ids.size == 1) {
-            primaries.add(ids.first())
-        } else {
+        ids.singleOrNull()?.let(primaries::add) ?: run {
             core.sqlManager.inGameProfileTable.getInGameUUIDIgnoreCase(username ?: "")?.let {
                 primaries.addAll(core.sqlManager.userDataTable.getOnlineServiceIds(it))
             }
         }
 
-        val secondaries = ids.filter { it !in primaries }.toSet()
+        val secondaries = ids - primaries
 
         LoggerProvider.logger.debug(
             "${username}'s hasJoined verification order: [${ValueUtil.join(", ", ", ", primaries)}], [${ValueUtil.join(", ", ", ", secondaries)}]"
@@ -55,7 +53,7 @@ class YggdrasilAuthenticationService(private val core: MultiCore) {
         username: String?,
         serverId: String?,
         ip: String?,
-        ids: Set<Int?>
+        ids: Set<Int>
     ): YggdrasilAuthenticationResult {
         val resolvedUsername = requireNotNull(username)
         val resolvedServerId = requireNotNull(serverId)
@@ -69,14 +67,14 @@ class YggdrasilAuthenticationService(private val core: MultiCore) {
         if (run == Signal.PASSED) {
             val response = requireNotNull(context.response.get())
             return YggdrasilAuthenticationResult.ofAllowed(
-                response.first,
-                response.second
+                response.profile,
+                response.serviceConfig
             )
         }
         if (context.serviceUnavailable.isNotEmpty()) {
             for ((key, value) in context.serviceUnavailable) {
                 LoggerProvider.logger.debug(
-                    "An exception occurred during authentication of the yggdrasil service whose ID is ${key?.serviceId ?: -1}",
+                    "An exception occurred during authentication of the yggdrasil service whose ID is ${key.serviceId}",
                     value
                 )
             }

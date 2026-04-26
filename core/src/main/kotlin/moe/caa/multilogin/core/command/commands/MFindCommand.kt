@@ -33,15 +33,13 @@ class MFindCommand(private val handler: CommandHandler) {
         val online = OnlineArgumentType.getOnline(context, "online")
         val sender = requireNotNull(context.source)
         val core = CommandHandler.core
-        val whitelist = if (online.whitelist == true)
+        val whitelist = if (online.whitelist == true) {
             core.languageHandler.getMessage("command_message_find_online_whitelist_true")
-        else
-            core.languageHandler.getMessage("command_message_find_online_whitelist_false")
-
-        val profileUUID = online.profileUUID
-        val profileInfo = if (profileUUID == null) {
-            core.languageHandler.getMessage("command_message_find_online_profilenotexist")
         } else {
+            core.languageHandler.getMessage("command_message_find_online_whitelist_false")
+        }
+
+        val profileInfo = online.profileUUID?.let { profileUUID ->
             val profileName = core.sqlManager.inGameProfileTable.getUsername(profileUUID)
                 ?: core.languageHandler.getMessage("command_message_find_online_profileunnamed")
             core.languageHandler.getMessage(
@@ -49,7 +47,7 @@ class MFindCommand(private val handler: CommandHandler) {
                 "profile_uuid" to profileUUID,
                 "profile_name" to profileName
             )
-        }
+        } ?: core.languageHandler.getMessage("command_message_find_online_profilenotexist")
 
         sender.sendMessagePL(
             core.languageHandler.getMessage(
@@ -75,8 +73,7 @@ class MFindCommand(private val handler: CommandHandler) {
             ?: core.languageHandler.getMessage("command_message_find_profile_entry_unnamed")
 
         val delimiter = core.languageHandler.getMessage("command_message_find_profile_entry_delimiter")
-        val listStr = onlineProfiles.joinToString(delimiter ?: "") { raw ->
-            val p = requireNotNull(raw)
+        val listStr = onlineProfiles.filterNotNull().joinToString(delimiter ?: "") { p ->
             val serviceName = core.pluginConfig.serviceIdMap[p.third]?.serviceName
                 ?: core.languageHandler.getMessage("command_message_find_profile_entry_unused_service")
             core.languageHandler.getMessage(

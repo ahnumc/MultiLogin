@@ -38,25 +38,27 @@ class SemVersion private constructor(
     companion object {
         fun of(version: String): SemVersion? {
             if (version.isEmpty()) return null
-            if (version.lowercase().startsWith("build_")) return null
+            if (version.startsWith("build_", ignoreCase = true)) return null
             val split = version.split("-")
             val mmp = split[0].split(".")
             if (mmp.size != 3) return null
-            if (split.size == 1) {
-                return SemVersion(
+            return when (split.size) {
+                1 -> SemVersion(
                     mmp[0].toInt(), mmp[1].toInt(), mmp[2].toInt(),
                     VersionSuffix.NONE, -1
                 )
+
+                2 -> {
+                    val suffixParts = split[1].split(".")
+                    if (suffixParts.size != 2) return null
+                    SemVersion(
+                        mmp[0].toInt(), mmp[1].toInt(), mmp[2].toInt(),
+                        VersionSuffix.valueOf(suffixParts[0]), suffixParts[1].toInt()
+                    )
+                }
+
+                else -> null
             }
-            if (split.size == 2) {
-                val suffixParts = split[1].split(".")
-                if (suffixParts.size != 2) return null
-                return SemVersion(
-                    mmp[0].toInt(), mmp[1].toInt(), mmp[2].toInt(),
-                    VersionSuffix.valueOf(suffixParts[0]), suffixParts[1].toInt()
-                )
-            }
-            return null
         }
     }
 }

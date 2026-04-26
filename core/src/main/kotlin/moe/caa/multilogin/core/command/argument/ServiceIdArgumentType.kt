@@ -9,7 +9,6 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder
 import moe.caa.multilogin.core.command.CommandHandler
 import moe.caa.multilogin.core.command.UniversalCommandExceptionType
 import moe.caa.multilogin.core.configuration.service.BaseServiceConfig
-import java.util.*
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -29,21 +28,17 @@ class ServiceIdArgumentType private constructor() : ArgumentType<BaseServiceConf
     }
 
     companion object {
-        fun service(): ServiceIdArgumentType {
-            return ServiceIdArgumentType()
-        }
+        fun service(): ServiceIdArgumentType = ServiceIdArgumentType()
 
-        fun getService(context: CommandContext<*>, name: String?): BaseServiceConfig {
-            return context.getArgument(name, BaseServiceConfig::class.java)
-        }
+        fun getService(context: CommandContext<*>, name: String?): BaseServiceConfig =
+            context.getArgument(name, BaseServiceConfig::class.java)
 
         @Throws(CommandSyntaxException::class)
         fun readServiceConfig(reader: StringReader): BaseServiceConfig {
             val start = reader.cursor
             val result = reader.readInt()
             val currentCore = CommandHandler.core
-            val config = currentCore.pluginConfig.serviceIdMap[result]
-            if (config == null) {
+            return currentCore.pluginConfig.serviceIdMap[result] ?: run {
                 reader.cursor = start
                 throw UniversalCommandExceptionType.create(
                     currentCore.languageHandler.getMessage(
@@ -52,7 +47,6 @@ class ServiceIdArgumentType private constructor() : ArgumentType<BaseServiceConf
                     ), reader
                 )
             }
-            return config
         }
 
         fun <S> getSuggestions(
@@ -60,9 +54,11 @@ class ServiceIdArgumentType private constructor() : ArgumentType<BaseServiceConf
             builder: SuggestionsBuilder
         ): CompletableFuture<Suggestions?>? {
             CommandHandler.core.pluginConfig.serviceIdMap
-                .forEach { (key: Int?, value: BaseServiceConfig?) ->
-                    if (key.toString().startsWith(builder.remaining.lowercase(Locale.getDefault()))) {
-                        builder.suggest(requireNotNull(key))
+                .keys
+                .filterNotNull()
+                .forEach { key ->
+                    if (key.toString().startsWith(builder.remainingLowerCase)) {
+                        builder.suggest(key)
                     }
                 }
             return builder.buildFuture()

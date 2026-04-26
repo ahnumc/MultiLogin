@@ -25,7 +25,7 @@ abstract class BaseYggdrasilServiceConfig protected constructor(
      */
     fun generateAuthURL(username: String, serverId: String, ip: String?): String {
         return transPapi(
-            this.authURL!!,
+            requireNotNull(authURL) { "Authentication URL is not configured." },
             "username" to URLEncoder.encode(username, StandardCharsets.UTF_8),
             "serverId" to URLEncoder.encode(serverId, StandardCharsets.UTF_8),
             "ip" to generateTraceIpContent(ip)
@@ -38,7 +38,7 @@ abstract class BaseYggdrasilServiceConfig protected constructor(
      */
     fun generateAuthPostContent(username: String, serverId: String, ip: String?): String {
         return transPapi(
-            this.authPostContent!!,
+            requireNotNull(authPostContent) { "Authentication POST content is not configured." },
             "username" to URLEncoder.encode(username, StandardCharsets.UTF_8),
             "serverId" to URLEncoder.encode(serverId, StandardCharsets.UTF_8),
             "ip" to generateTraceIpContent(ip)
@@ -46,20 +46,11 @@ abstract class BaseYggdrasilServiceConfig protected constructor(
     }
 
     private fun generateTraceIpContent(ip: String?): String {
-        if (!trackIp) {
-            return ""
-        }
-        if (ip.isNullOrEmpty()) {
-            return ""
-        }
-        val trackIpContent = this.authTrackIpContent
-        if (trackIpContent.isEmpty()) {
-            return ""
-        }
-        return transPapi(
-            trackIpContent,
-            "ip" to ip
-        )
+        if (!trackIp || ip.isNullOrEmpty()) return ""
+        return authTrackIpContent
+            .takeIf(String::isNotEmpty)
+            ?.let { transPapi(it, "ip" to ip) }
+            ?: ""
     }
 
     /**

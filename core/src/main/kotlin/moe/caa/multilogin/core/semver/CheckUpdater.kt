@@ -8,11 +8,10 @@ import moe.caa.multilogin.core.ohc.LoggingInterceptor
 import moe.caa.multilogin.core.ohc.RetryInterceptor
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.time.Duration
-import java.util.Base64
+import java.util.*
 
 class CheckUpdater(private val core: MultiCore) {
     @get:Throws(IOException::class)
@@ -30,19 +29,19 @@ class CheckUpdater(private val core: MultiCore) {
                 .build()
             client.newCall(request).execute().use { response ->
                 val body = requireNotNull(response.body) { "Latest-version response body is empty." }
-                ByteArrayOutputStream().use { baos ->
-                    val content = JsonParser.parseString(
-                        body.string()
-                    ).asJsonObject.getAsJsonPrimitive("content").asString
-                    content.split("\n").filter { it.isNotEmpty() }.forEach { s ->
-                        baos.writeBytes(Base64.getDecoder().decode(s))
+                val content = JsonParser.parseString(body.string())
+                    .asJsonObject
+                    .getAsJsonPrimitive("content")
+                    .asString
+                val latestText = content.lineSequence()
+                    .filter(String::isNotBlank)
+                    .joinToString("") { chunk ->
+                        String(Base64.getDecoder().decode(chunk), StandardCharsets.UTF_8)
                     }
-                    baos.flush()
-                    return baos.toString(StandardCharsets.UTF_8)
-                        .split("\n")
-                        .filter { it.isNotEmpty() }
-                        .mapNotNull { SemVersion.of(it) }
-                }
+                return latestText.lineSequence()
+                    .filter(String::isNotBlank)
+                    .mapNotNull(SemVersion::of)
+                    .toList()
             }
     }
 
@@ -54,19 +53,21 @@ class CheckUpdater(private val core: MultiCore) {
             try {
                 val latestVersionNow = this.latestVersionNow
                 if (latestVersionNow.isEmpty()) return@runTaskAsyncTimer
-                val currentVersion = core.semVersion
-                if (currentVersion == null) {
-                    LoggerProvider.logger.info(
-                        "The latest version is ${ValueUtil.join(", ", " and ", latestVersionNow.map { it.toString() })}, please update."
-                    )
-                } else {
-                    val sv = latestVersionNow.fold(currentVersion) { acc, version ->
+                core.semVersion?.let { currentVersion ->
+                    val latestRecommended = latestVersionNow.fold(currentVersion) { acc, version ->
                         if (acc.needUpgrade(version)) version else acc
                     }
-                    if (sv != currentVersion) {
-                        LoggerProvider.logger.info("The latest recommended version is $sv, Please update.")
+                    if (latestRecommended != currentVersion) {
+                        LoggerProvider.logger.info("The latest recommended version is $latestRecommended, Please update.")
                     }
-                }
+                } ?: LoggerProvider.logger.info(
+                    "The latest version is ${
+                        ValueUtil.join(
+                            ", ",
+                            " and ",
+                            latestVersionNow.map { it.toString() })
+                    }, please update."
+                )
             } catch (e: IOException) {
                 LoggerProvider.logger.debug("Check update failure.", e)
             }

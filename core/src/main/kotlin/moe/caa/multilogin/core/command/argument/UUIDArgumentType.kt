@@ -17,9 +17,8 @@ class UUIDArgumentType private constructor() : ArgumentType<UUID> {
     override fun parse(reader: StringReader): UUID {
         val argBeginning = reader.cursor
 
-        val uuidString: String = StringArgumentType.readString(reader)
-        val ret = getUuidOrNull(uuidString)
-        if (ret == null) {
+        val uuidString = StringArgumentType.readString(reader)
+        return getUuidOrNull(uuidString) ?: run {
             reader.cursor = argBeginning
             throw UniversalCommandExceptionType.create(
                 CommandHandler.core.languageHandler.getMessage(
@@ -28,16 +27,12 @@ class UUIDArgumentType private constructor() : ArgumentType<UUID> {
                 ), reader
             )
         }
-        return ret
     }
 
     companion object {
-        fun uuid(): UUIDArgumentType {
-            return UUIDArgumentType()
-        }
+        fun uuid(): UUIDArgumentType = UUIDArgumentType()
 
-        fun getUuid(context: CommandContext<*>, name: String?): UUID {
-            return context.getArgument(name, UUID::class.java)
-        }
+        fun getUuid(context: CommandContext<*>, name: String?): UUID =
+            context.getArgument(name, UUID::class.java)
     }
 }

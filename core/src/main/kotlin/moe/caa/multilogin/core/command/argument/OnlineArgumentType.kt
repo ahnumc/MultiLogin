@@ -21,21 +21,20 @@ class OnlineArgumentType : ArgumentType<OnlineArgumentType.OnlineArgument> {
     @Throws(CommandSyntaxException::class)
     override fun parse(reader: StringReader): OnlineArgument {
         val i = reader.cursor
-        val serviceConfig: BaseServiceConfig = ServiceIdArgumentType.readServiceConfig(reader)
+        val serviceConfig = ServiceIdArgumentType.readServiceConfig(reader)
         if (!reader.canRead()) {
             reader.cursor = i
             throw CommandHandler.builtInExceptions.dispatcherUnknownCommand().createWithContext(reader)
         }
         reader.skip()
-        val nameOrUuid: String = StringArgumentType.readString(reader)
+        val nameOrUuid = StringArgumentType.readString(reader)
 
         val currentCore = CommandHandler.core
         val dataTable = currentCore.sqlManager.userDataTable
 
-        var uuid = getUuidOrNull(nameOrUuid)
-        if (uuid == null) {
-            uuid = dataTable.getOnlineUUID(nameOrUuid, serviceConfig.serviceId)
-            if (uuid == null) {
+        val uuid = getUuidOrNull(nameOrUuid)
+            ?: dataTable.getOnlineUUID(nameOrUuid, serviceConfig.serviceId)
+            ?: run {
                 reader.cursor = i
                 throw UniversalCommandExceptionType.create(
                     currentCore.languageHandler.getMessage(
@@ -46,9 +45,7 @@ class OnlineArgumentType : ArgumentType<OnlineArgumentType.OnlineArgument> {
                     ), reader
                 )
             }
-        }
-        val there = dataTable.get(uuid, serviceConfig.serviceId)
-        if (there == null) {
+        val there = dataTable.get(uuid, serviceConfig.serviceId) ?: run {
             reader.cursor = i
             throw UniversalCommandExceptionType.create(
                 currentCore.languageHandler.getMessage(
@@ -78,12 +75,9 @@ class OnlineArgumentType : ArgumentType<OnlineArgumentType.OnlineArgument> {
     )
 
     companion object {
-        fun online(): OnlineArgumentType {
-            return OnlineArgumentType()
-        }
+        fun online(): OnlineArgumentType = OnlineArgumentType()
 
-        fun getOnline(context: CommandContext<*>, name: String?): OnlineArgument {
-            return context.getArgument(name, OnlineArgument::class.java)
-        }
+        fun getOnline(context: CommandContext<*>, name: String?): OnlineArgument =
+            context.getArgument(name, OnlineArgument::class.java)
     }
 }

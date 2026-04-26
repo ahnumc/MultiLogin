@@ -18,10 +18,10 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class PlayerHandler(private val core: MultiCore) : HandlerAPI {
     // inGameUUID \ Entry
-    private val cache: MutableMap<UUID, Entry> = ConcurrentHashMap()
+    private val cache = ConcurrentHashMap<UUID, Entry>()
 
     // inGameUUID \ Entry
-    val loginCache: MutableMap<UUID, Entry> = ConcurrentHashMap()
+    val loginCache = ConcurrentHashMap<UUID, Entry>()
 
     override fun pushPlayerQuitGame(inGameUUID: UUID?, username: String?): HandleResult =
         HandleResult(HandleResult.Type.NONE, null)
@@ -55,25 +55,22 @@ class PlayerHandler(private val core: MultiCore) : HandlerAPI {
         if (!core.pluginConfig.welcomeMsg) return
 
         core.plugin.runServer.scheduler.runTaskAsync({
-            val pair = getPlayerOnlineProfile0(player.uniqueId)
-            val msg = if (pair == null) {
-                core.languageHandler.getMessage(
-                    "welcome_msg_to_unknown",
-                    "profile_name" to player.name,
-                    "profile_uuid" to player.name
-                )
-            } else {
+            val message = getPlayerOnlineProfile0(player.uniqueId)?.let { (onlineProfile, serviceConfig) ->
                 core.languageHandler.getMessage(
                     "welcome_msg",
-                    "online_name" to pair.first?.name,
-                    "online_uuid" to pair.first?.id,
-                    "service_name" to pair.second?.serviceName,
-                    "service_id" to pair.second?.serviceId,
+                    "online_name" to onlineProfile.name,
+                    "online_uuid" to onlineProfile.id,
+                    "service_name" to serviceConfig.serviceName,
+                    "service_id" to serviceConfig.serviceId,
                     "profile_name" to player.name,
                     "profile_uuid" to player.uniqueId
                 )
-            }
-            player.sendMessagePL(msg)
+            } ?: core.languageHandler.getMessage(
+                "welcome_msg_to_unknown",
+                "profile_name" to player.name,
+                "profile_uuid" to player.name
+            )
+            player.sendMessagePL(message)
         }, 3000)
     }
 
@@ -81,17 +78,17 @@ class PlayerHandler(private val core: MultiCore) : HandlerAPI {
 
     override fun getPlayerOnlineProfile(inGameUUID: UUID?): OnlineProfileRef? {
         val entry = cache[inGameUUID] ?: return null
-        return OnlineProfileRef(entry.onlineProfileData, entry.serviceConfig?.serviceId)
+        return OnlineProfileRef(entry.onlineProfileData, entry.serviceConfig.serviceId)
     }
 
-    fun getPlayerOnlineProfile0(inGameUUID: UUID?): Pair<GameProfile?, BaseServiceConfig?>? {
+    fun getPlayerOnlineProfile0(inGameUUID: UUID?): Pair<GameProfile, BaseServiceConfig>? {
         val entry = cache[inGameUUID] ?: return null
         return entry.onlineProfileData to entry.serviceConfig
     }
 
     override fun getInGameUUID(onlineUUID: UUID?, serviceId: Int): UUID? =
         cache.entries.find { (_, v) ->
-            v?.onlineProfileData?.id == onlineUUID && v?.serviceConfig?.serviceId == serviceId
+            v.onlineProfileData.id == onlineUUID && v.serviceConfig.serviceId == serviceId
         }?.key
 
     override fun getServiceName(serviceId: Int): String? =
@@ -100,7 +97,8 @@ class PlayerHandler(private val core: MultiCore) : HandlerAPI {
     fun register() {
         core.plugin.runServer.scheduler.runTaskAsyncTimer({
             val onlinePlayerUUIDs = core.plugin.runServer.playerManager.onlinePlayers
-                .mapTo(mutableSetOf()) { it.uniqueId }
+                .map(IPlayer::uniqueId)
+                .toSet()
 
             val noExists = cache.entries.filter { (key, _) -> key !in onlinePlayerUUIDs }.toSet()
 
@@ -117,7 +115,7 @@ class PlayerHandler(private val core: MultiCore) : HandlerAPI {
         }, 0, 1000 * 60)
     }
 
-    class Entry(
+    data class Entry(
         val onlineProfileData: GameProfile,
         val serviceConfig: BaseServiceConfig,
         val signTimeMillis: Long
@@ -126,15 +124,5 @@ class PlayerHandler(private val core: MultiCore) : HandlerAPI {
 
         override val loginService: IService
             get() = serviceConfig
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (other !is Entry) return false
-            return serviceConfig == other.serviceConfig
-                    && signTimeMillis == other.signTimeMillis
-                    && onlineProfileData == other.onlineProfileData
-        }
-
-        override fun hashCode(): Int = arrayOf(onlineProfileData, serviceConfig, signTimeMillis).contentHashCode()
     }
 }

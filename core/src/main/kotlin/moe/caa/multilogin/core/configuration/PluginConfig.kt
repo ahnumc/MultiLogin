@@ -55,7 +55,7 @@ class PluginConfig(private val dataFolder: File, private val core: MultiCore) {
     var welcomeMsg = false
         private set
 
-    var serviceIdMap: Map<Int?, BaseServiceConfig?> = emptyMap()
+    var serviceIdMap: Map<Int, BaseServiceConfig> = emptyMap()
         private set
 
     var confirmCommandValidTimeMills: Long = 0
@@ -96,7 +96,7 @@ class PluginConfig(private val dataFolder: File, private val core: MultiCore) {
         confirmCommandValidTimeMills = configConfigurationNode.node("confirmCommandValidTimeMills").getLong(15000)
         linkAcceptValidTimeMills = configConfigurationNode.node("linkAcceptValidTimeMills").getLong(30000)
 
-        val idMap = mutableMapOf<Int?, BaseServiceConfig?>()
+        val idMap = mutableMapOf<Int, BaseServiceConfig>()
         Files.list(servicesFolder.toPath()).use { list ->
             val tmp = list.toList()
                 .filter { it.toFile().name.lowercase().endsWith(".yml") }
@@ -114,7 +114,7 @@ class PluginConfig(private val dataFolder: File, private val core: MultiCore) {
                     }
                 }
 
-            val seen = mutableSetOf<ServiceType?>()
+            val seen = mutableSetOf<ServiceType>()
             for (config in tmp) {
                 onlyOneServiceInfoMap[config.serviceType]?.let { typeName ->
                     if (!seen.add(config.serviceType))
@@ -141,8 +141,7 @@ class PluginConfig(private val dataFolder: File, private val core: MultiCore) {
             }
         }
 
-        idMap.forEach { (id, config) ->
-            val serviceConfig = requireNotNull(config)
+        idMap.forEach { (id, serviceConfig) ->
             if (serviceConfig.serviceName.equals("unnamed", ignoreCase = true)) {
                 LoggerProvider.logger.warn("The name of authentication service whose id is $id has not been set.")
             }
@@ -254,7 +253,7 @@ class PluginConfig(private val dataFolder: File, private val core: MultiCore) {
     }
 
     companion object {
-        private val onlyOneServiceInfoMap: Map<ServiceType?, String?> = mapOf(
+        private val onlyOneServiceInfoMap: Map<ServiceType, String> = mapOf(
             ServiceType.OFFICIAL to "official",
             ServiceType.FLOODGATE to "floodgate"
         )

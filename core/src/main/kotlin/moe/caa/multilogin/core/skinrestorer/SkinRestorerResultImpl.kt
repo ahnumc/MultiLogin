@@ -43,9 +43,7 @@ class SkinRestorerResultImpl private constructor(
         }
 
         fun handleSkinRestoreResult(result: SkinRestorerResultImpl) {
-            if (result.throwable != null) {
-                handleSkinRestoreResult(result.throwable)
-            }
+            result.throwable?.let(::handleSkinRestoreResult)
         }
     }
 }

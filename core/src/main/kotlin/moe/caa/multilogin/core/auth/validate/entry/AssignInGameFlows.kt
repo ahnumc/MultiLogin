@@ -2,6 +2,7 @@ package moe.caa.multilogin.core.auth.validate.entry
 
 import moe.caa.multilogin.api.internal.logger.LoggerProvider
 import moe.caa.multilogin.core.auth.validate.ValidateContext
+import moe.caa.multilogin.core.configuration.service.BaseServiceConfig
 import moe.caa.multilogin.core.main.MultiCore
 import moe.caa.multilogin.flows.workflows.BaseFlows
 import moe.caa.multilogin.flows.workflows.Signal
@@ -16,22 +17,10 @@ class AssignInGameFlows(private val core: MultiCore) : BaseFlows<ValidateContext
         val serviceConfig = requireNotNull(authResult.serviceConfig)
         val response = requireNotNull(authResult.response)
         val onlineUUID = requireNotNull(response.id)
-
-        var inGameUUID = core.sqlManager.userDataTable.getInGameUUID(onlineUUID, serviceConfig.serviceId)
-
         val loginName = response.name
-        if (inGameUUID == null) {
-            inGameUUID = requireNotNull(serviceConfig.initUUID).generateUUID(onlineUUID, loginName)
 
-            synchronized(AssignInGameFlows::class.java) {
-                while (core.sqlManager.inGameProfileTable.dataExists(requireNotNull(inGameUUID))) {
-                    LoggerProvider.logger.warn("UUID $inGameUUID has been used and will take a random value.")
-                    inGameUUID = UUID.randomUUID()
-                }
-                core.sqlManager.userDataTable.setInGameUUID(onlineUUID, serviceConfig.serviceId, inGameUUID)
-            }
-        }
-        val resolvedInGameUUID = requireNotNull(inGameUUID)
+        val resolvedInGameUUID = core.sqlManager.userDataTable.getInGameUUID(onlineUUID, serviceConfig.serviceId)
+            ?: allocateInGameUUID(onlineUUID, loginName, serviceConfig)
         if (core.pluginConfig.autoNameChange && ctx.onlineNameUpdated) {
             val username = core.sqlManager.inGameProfileTable.getUsername(resolvedInGameUUID)
             username?.takeUnless(String::isEmpty)?.let { core.sqlManager.inGameProfileTable.eraseUsername(it) }
@@ -57,7 +46,7 @@ class AssignInGameFlows(private val core: MultiCore) : BaseFlows<ValidateContext
             while ((core.sqlManager.inGameProfileTable.getInGameUUIDIgnoreCase(fixName)
                     .also { ownerUUID = it }) != null
             ) {
-                if (ownerUUID == inGameUUID) break
+                if (ownerUUID == resolvedInGameUUID) break
                 fixName = incrementString(fixName)
                 modified = true
             }
@@ -78,47 +67,54 @@ class AssignInGameFlows(private val core: MultiCore) : BaseFlows<ValidateContext
             }
         }
 
-        if (exist) {
-            try {
+        return try {
+            if (exist) {
                 core.sqlManager.inGameProfileTable.updateUsername(resolvedInGameUUID, fixName)
-                ctx.inGameProfile.id = resolvedInGameUUID
-                ctx.inGameProfile.name = fixName
-                return Signal.PASSED
-            } catch (_: SQLIntegrityConstraintViolationException) {
-                ctx.setDisallowMessage(
-                    core.languageHandler.getMessage(
-                        "auth_validate_failed_username_repeated",
-                        "name" to ctx.inGameProfile.name
-                    )
-                )
-                return Signal.TERMINATED
-            }
-        } else {
-            try {
+            } else {
                 core.sqlManager.inGameProfileTable.insertNewData(resolvedInGameUUID, fixName)
-                ctx.inGameProfile.id = resolvedInGameUUID
-                ctx.inGameProfile.name = fixName
-                return Signal.PASSED
-            } catch (_: SQLIntegrityConstraintViolationException) {
-                ctx.setDisallowMessage(
-                    core.languageHandler.getMessage(
-                        "auth_validate_failed_username_repeated",
-                        "name" to ctx.inGameProfile.name
-                    )
-                )
-                return Signal.TERMINATED
             }
+            ctx.inGameProfile.id = resolvedInGameUUID
+            ctx.inGameProfile.name = fixName
+            Signal.PASSED
+        } catch (_: SQLIntegrityConstraintViolationException) {
+            ctx.setDisallowMessage(
+                core.languageHandler.getMessage(
+                    "auth_validate_failed_username_repeated",
+                    "name" to fixName
+                )
+            )
+            Signal.TERMINATED
         }
+    }
+
+    private fun allocateInGameUUID(
+        onlineUUID: UUID,
+        loginName: String?,
+        serviceConfig: BaseServiceConfig
+    ): UUID {
+        var inGameUUID = requireNotNull(
+            requireNotNull(serviceConfig.initUUID).generateUUID(onlineUUID, loginName)
+        )
+
+        synchronized(AssignInGameFlows::class.java) {
+            while (core.sqlManager.inGameProfileTable.dataExists(inGameUUID)) {
+                LoggerProvider.logger.warn("UUID $inGameUUID has been used and will take a random value.")
+                inGameUUID = UUID.randomUUID()
+            }
+            core.sqlManager.userDataTable.setInGameUUID(onlineUUID, serviceConfig.serviceId, inGameUUID)
+        }
+
+        return inGameUUID
     }
 
     private fun incrementString(source: String): String {
         if (source.isEmpty()) return "1"
-        val c = source[source.length - 1]
-        if (Character.isDigit(c)) {
-            val i = Character.getNumericValue(c)
-            return if (i == 9) incrementString(source.substring(0, source.length - 1)) + "0"
-            else source.substring(0, source.length - 1) + (i + 1)
+        val lastChar = source.last()
+        if (lastChar.isDigit()) {
+            val value = Character.getNumericValue(lastChar)
+            return if (value == 9) incrementString(source.dropLast(1)) + "0"
+            else source.dropLast(1) + (value + 1)
         }
-        return source + "1"
+        return "${source}1"
     }
 }

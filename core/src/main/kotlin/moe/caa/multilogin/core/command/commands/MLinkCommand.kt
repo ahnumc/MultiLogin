@@ -15,7 +15,7 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 class MLinkCommand(private val handler: CommandHandler) {
-    private val gameProfileEntryMap: MutableMap<GameProfile, Entry> = ConcurrentHashMap()
+    private val gameProfileEntryMap = ConcurrentHashMap<GameProfile, Entry>()
 
     fun register(literal: LiteralArgumentBuilder<ISender?>): LiteralArgumentBuilder<ISender?>? {
         return literal
@@ -57,13 +57,14 @@ class MLinkCommand(private val handler: CommandHandler) {
         val sourcePlayer = requireNotNull(sender.asPlayer)
         val core = CommandHandler.core
 
-        gameProfileEntryMap.values.removeIf { it.timeMills < System.currentTimeMillis() - 30000 }
+        expireEntries(30000)
         val entry = gameProfileEntryMap[self]
-        if (entry == null || entry.receiverUserInGameUUID != target.uniqueId || entry.code == null) {
+        val expectedCode = entry?.code
+        if (entry == null || entry.receiverUserInGameUUID != target.uniqueId || expectedCode == null) {
             sender.sendMessagePL(core.languageHandler.getMessage("command_message_code_invalid"))
             return 0
         }
-        if (entry.code != code) {
+        if (expectedCode != code) {
             sender.sendMessagePL(core.languageHandler.getMessage("command_message_code_invalid_code"))
             return 0
         }
@@ -99,9 +100,7 @@ class MLinkCommand(private val handler: CommandHandler) {
         val sender = requireNotNull(context.source)
         val sourcePlayer = requireNotNull(sender.asPlayer)
         val core = CommandHandler.core
-        gameProfileEntryMap.values.removeIf {
-            it.timeMills < System.currentTimeMillis() - core.pluginConfig.linkAcceptValidTimeMills
-        }
+        expireEntries(core.pluginConfig.linkAcceptValidTimeMills)
         val entry = gameProfileEntryMap.entries
             .firstOrNull {
                 it.key.name.equals(string, ignoreCase = true) &&
@@ -169,11 +168,15 @@ class MLinkCommand(private val handler: CommandHandler) {
         return 0
     }
 
+    private fun expireEntries(validMillis: Long) {
+        gameProfileEntryMap.values.removeIf { it.createdAtMillis < System.currentTimeMillis() - validMillis }
+    }
+
     class Entry(
         val requesterOnlineProfile: moe.caa.multilogin.api.internal.handle.OnlineProfileRef,
         val receiverUserInGameUUID: UUID
     ) {
-        val timeMills = System.currentTimeMillis()
+        val createdAtMillis = System.currentTimeMillis()
         var code: String? = null
     }
 }

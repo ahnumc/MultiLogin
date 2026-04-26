@@ -10,21 +10,14 @@ import moe.caa.multilogin.loader.library.Library
 import moe.caa.multilogin.loader.task.LibraryDownloadFlows
 import java.io.File
 import java.io.FileInputStream
-import java.io.ByteArrayOutputStream
 import java.net.URL
 import java.net.URLClassLoader
 import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicBoolean
 
-class PluginLoader(plugin: IPlugin) {
-    private val librariesFolder: File
-    private val plugin: IPlugin
+class PluginLoader(private val plugin: IPlugin) {
+    private val librariesFolder = File(plugin.dataFolder, "libraries")
     private val loaded = AtomicBoolean(false)
-
-    init {
-        this.plugin = plugin
-        this.librariesFolder = File(plugin.dataFolder, "libraries")
-    }
 
     @Synchronized
     @Throws(Exception::class)
@@ -37,24 +30,13 @@ class PluginLoader(plugin: IPlugin) {
         val addUrlMethod = URLClassLoader::class.java.getDeclaredMethod("addURL", URL::class.java)
         addUrlMethod.isAccessible = true
 
-        val needDownload = mutableListOf<Library>()
-        for (library in libraries) {
-            val file = File(librariesFolder, library.fileName)
-            if (file.exists() && file.length() != 0L) {
-                val sha256 = getSha256(file)
-                LoggerProvider.logger.debug("The digest value of calculation file ${file.name} is $sha256.")
-                if (sha256 == libraryDigestMap[library]) {
-                    addUrlMethod.invoke(classLoader, file.toURI().toURL())
-                    continue
-                }
-                LoggerProvider.logger.warn("Failed to validate digest value of file ${file.absolutePath}, it will be re-downloaded.")
-            }
-            needDownload.add(library)
+        val needDownload = libraries.filterNot { library ->
+            tryLoadLibrary(library, addUrlMethod, classLoader)
         }
 
         if (needDownload.isNotEmpty()) {
             LoggerProvider.logger.info("Downloading ${needDownload.size} missing files...")
-            val downloadFlows = ParallelFlows<Void?>(
+            val downloadFlows = ParallelFlows<Unit?>(
                 needDownload.map { LibraryDownloadFlows(it, librariesFolder, plugin.tempFolder) }
             )
             if (downloadFlows.run(null) == Signal.TERMINATED) {
@@ -64,13 +46,11 @@ class PluginLoader(plugin: IPlugin) {
 
         for (library in needDownload) {
             val file = File(librariesFolder, library.fileName)
-            val sha256 = getSha256(file)
-            LoggerProvider.logger.debug("The digest value of calculation file ${file.name} is $sha256.")
-            if (sha256 == libraryDigestMap[library]) {
-                addUrlMethod.invoke(classLoader, file.toURI().toURL())
-                continue
+            if (!tryLoadLibrary(library, addUrlMethod, classLoader)) {
+                throw InitialFailedException(
+                    "Failed to validate the digest value of the file ${file.absolutePath} that was just downloaded."
+                )
             }
-            throw InitialFailedException("Failed to validate the digest value of the file ${file.absolutePath} that was just downloaded.")
         }
     }
 
@@ -81,76 +61,87 @@ class PluginLoader(plugin: IPlugin) {
     }
 
     @Throws(Exception::class)
+    private fun tryLoadLibrary(
+        library: Library,
+        addUrlMethod: java.lang.reflect.Method,
+        classLoader: URLClassLoader
+    ): Boolean {
+        val file = File(librariesFolder, library.fileName)
+        if (!file.exists() || file.length() == 0L) return false
+
+        val sha256 = getSha256(file)
+        LoggerProvider.logger.debug("The digest value of calculation file ${file.name} is $sha256.")
+        if (sha256 != libraryDigestMap[library]) {
+            LoggerProvider.logger.warn(
+                "Failed to validate digest value of file ${file.absolutePath}, it will be re-downloaded."
+            )
+            return false
+        }
+
+        addUrlMethod.invoke(classLoader, file.toURI().toURL())
+        return true
+    }
+
+    @Throws(Exception::class)
     private fun generateFolder() {
-        if (!librariesFolder.exists() && !librariesFolder.mkdirs())
-            throw Exception("Unable to create folder: ${librariesFolder.absolutePath}")
-        if (!plugin.tempFolder!!.exists() && !plugin.tempFolder!!.mkdirs())
-            throw Exception("Unable to create folder: ${plugin.tempFolder!!.absolutePath}")
+        ensureDirectory(librariesFolder)
+        ensureDirectory(plugin.tempFolder)
     }
 
     @Throws(Exception::class)
     private fun getSha256(file: File): String {
         FileInputStream(file).use { fis ->
-            ByteArrayOutputStream().use { baos ->
-                val buff = ByteArray(1024)
-                var n: Int
-                while (fis.read(buff).also { n = it } > 0) baos.write(buff, 0, n)
-                return MessageDigest.getInstance("SHA-256").digest(baos.toByteArray())
-                    .joinToString("") { "%02x".format(it) }
+            val digest = MessageDigest.getInstance("SHA-256")
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            while (true) {
+                val bytesRead = fis.read(buffer)
+                if (bytesRead < 0) break
+                digest.update(buffer, 0, bytesRead)
             }
+            return digest.digest().joinToString("") { "%02x".format(it) }
         }
     }
 
     companion object {
-        val libraryDigestMap: Map<Library?, String?>
-        val libraries: Set<Library>
-        val repositories: List<String?>
+        val libraryDigestMap: Map<Library, String> = loadResource(".digests") { lines ->
+            lines.associate { line ->
+                val parts = line.split("=", limit = 2)
+                require(parts.size == 2) { "Invalid digest entry: $line" }
+                Library.of(parts[0], ":") to parts[1]
+            }
+        }
+
+        val libraries: Set<Library> = loadResource("libraries") { lines ->
+            lines.map { Library.of(it, "\\s+") }.toSet()
+        }
+
+        val repositories: List<String> = loadResource("repositories") { lines ->
+            lines.map { repository -> repository.takeIf { it.endsWith("/") } ?: "$repository/" }.toList()
+        }
 
         init {
-            try {
-                libraryDigestMap =
-                    PluginLoader::class.java.classLoader.getResourceAsStream(".digests")!!.bufferedReader()
-                        .use { reader ->
-                            reader.lineSequence()
-                                .filter { it.isNotBlank() && it[0] != '#' }
-                                .associate { line ->
-                                    val parts = line.split("=")
-                                    Library.of(parts[0], ":") to parts[1]
-                                }
-                        }
-            } catch (e: Exception) {
-                throw InitialFailedException(e)
-            }
-
-            try {
-                libraries = PluginLoader::class.java.classLoader.getResourceAsStream("libraries")!!.bufferedReader()
-                    .use { reader ->
-                        reader.lineSequence()
-                            .filter { it.isNotBlank() && it[0] != '#' }
-                            .map { Library.of(it, "\\s+") }
-                            .toSet()
-                    }
-            } catch (e: Exception) {
-                throw InitialFailedException(e)
-            }
-
-            try {
-                repositories =
-                    PluginLoader::class.java.classLoader.getResourceAsStream("repositories")!!.bufferedReader()
-                        .use { reader ->
-                            reader.lineSequence()
-                                .filter { it.isNotBlank() && it[0] != '#' }
-                                .map { if (it.endsWith("/")) it else "$it/" }
-                                .toList()
-                        }
-            } catch (e: Exception) {
-                throw InitialFailedException(e)
-            }
-
-            for (library in libraries) {
+            libraries.forEach { library ->
                 if (library !in libraryDigestMap) {
                     throw InitialFailedException("Missing digest for file ${library.fileName}.")
                 }
+            }
+        }
+
+        private fun ensureDirectory(folder: File) {
+            if (!folder.exists() && !folder.mkdirs()) {
+                throw Exception("Unable to create folder: ${folder.absolutePath}")
+            }
+        }
+
+        private fun <T> loadResource(name: String, transform: (Sequence<String>) -> T): T {
+            return try {
+                requireNotNull(PluginLoader::class.java.classLoader.getResourceAsStream(name)) {
+                    "Missing resource: $name"
+                }.bufferedReader().use { reader ->
+                    transform(reader.lineSequence().filterNot { line -> line.isBlank() || line.startsWith('#') })
+                }
+            } catch (e: Exception) {
+                throw InitialFailedException(e)
             }
         }
     }

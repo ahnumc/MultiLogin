@@ -57,16 +57,13 @@ class VelocityInjector : Injector {
         try {
             val serverbound = getServerboundPacketRegistry(StateRegistry.PLAY)
 
-            val playerSessionPacketMapping = LinkedList<PacketMapping>()
-            for (entry in packetMapping.entries) {
+            val playerSessionPacketMapping = packetMapping.map { (protocolVersion, packetId) ->
                 LoggerProvider.logger
-                    .debug("Register PlayerSessionPacketBlocker for protocol version: " + entry.key)
-                playerSessionPacketMapping.add(
-                    createPacketMapping(
-                        entry.value,
-                        ProtocolVersion.getProtocolVersion(entry.key),
-                        false
-                    )
+                    .debug("Register PlayerSessionPacketBlocker for protocol version: $protocolVersion")
+                createPacketMapping(
+                    packetId,
+                    ProtocolVersion.getProtocolVersion(protocolVersion),
+                    false
                 )
             }
             registerPacket(
@@ -150,6 +147,8 @@ class VelocityInjector : Injector {
             @Suppress("UNCHECKED_CAST")
             val packetClassToId =
                 `f$packetClassToId`.get(protocolRegistry) as MutableMap<Class<out MinecraftPacket>, Int>
+
+            @Suppress("UNCHECKED_CAST")
             val originalPacketClass = originalClass as Class<out MinecraftPacket>
             if (!packetClassToId.containsKey(originalPacketClass)) continue
             `map$putMethod`.invoke(packetClassToId, appendClass, packetClassToId[originalPacketClass])
@@ -227,11 +226,10 @@ class VelocityInjector : Injector {
         bound: PacketRegistry, clazz: Class<P>, packetSupplier: Supplier<P>,
         vararg mappings: PacketMapping
     ) {
-        require(mappings.size != 0) { "At least one mapping must be provided." }
+        require(mappings.isNotEmpty()) { "At least one mapping must be provided." }
 
-        for (i in mappings.indices) {
-            val current: PacketMapping = mappings[i]
-            val next = if (i + 1 < mappings.size) mappings[i + 1] else current
+        for ((index, current) in mappings.withIndex()) {
+            val next = mappings.getOrElse(index + 1) { current }
 
             val protocolVersion = current.javaClass.getDeclaredField("protocolVersion")
             protocolVersion.setAccessible(true)

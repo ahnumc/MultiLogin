@@ -23,24 +23,19 @@ object GameProfileSerializer : KSerializer<GameProfile> {
 
     override fun deserialize(decoder: Decoder): GameProfile {
         val json = (decoder as JsonDecoder).decodeJsonElement().jsonObject
-        val id = requireNotNull(getUuidOrNull(json["id"]!!.jsonPrimitive.content)) {
+        val id = requireNotNull(json["id"]?.jsonPrimitive?.content?.let(::getUuidOrNull)) {
             "Invalid UUID in GameProfile"
         }
         val name = json["name"]?.jsonPrimitive?.content ?: ""
         val propertyMap = mutableMapOf<String, Property>()
-        json["properties"]?.let { propsEl ->
-            // Mojang format: array of {name, value, signature?}
-            if (propsEl is kotlinx.serialization.json.JsonArray) {
-                for (el in propsEl.jsonArray) {
-                    val obj = el.jsonObject
-                    val prop = Property(
-                        name = obj["name"]?.jsonPrimitive?.content ?: "",
-                        value = obj["value"]?.jsonPrimitive?.content ?: "",
-                        signature = obj["signature"]?.jsonPrimitive?.content
-                    )
-                    propertyMap[prop.name] = prop
-                }
-            }
+        json["properties"]?.takeIf { it is kotlinx.serialization.json.JsonArray }?.jsonArray?.forEach { el ->
+            val obj = el.jsonObject
+            val prop = Property(
+                name = obj["name"]?.jsonPrimitive?.content ?: "",
+                value = obj["value"]?.jsonPrimitive?.content ?: "",
+                signature = obj["signature"]?.jsonPrimitive?.content
+            )
+            propertyMap[prop.name] = prop
         }
         return GameProfile(id, name, propertyMap)
     }
@@ -51,7 +46,7 @@ object GameProfileSerializer : KSerializer<GameProfile> {
             put("id", kotlinx.serialization.json.JsonPrimitive(value.id.toString().replace("-", "")))
             put("name", kotlinx.serialization.json.JsonPrimitive(value.name))
             put("properties", kotlinx.serialization.json.buildJsonArray {
-                for ((_, prop) in value.propertyMap) {
+                value.propertyMap.values.forEach { prop ->
                     add(kotlinx.serialization.json.buildJsonObject {
                         put("name", kotlinx.serialization.json.JsonPrimitive(prop.name))
                         put("value", kotlinx.serialization.json.JsonPrimitive(prop.value))

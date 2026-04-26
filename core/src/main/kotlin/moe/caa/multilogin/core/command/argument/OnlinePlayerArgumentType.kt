@@ -17,13 +17,11 @@ class OnlinePlayerArgumentType : ArgumentType<MutableSet<IPlayer>> {
     @Throws(CommandSyntaxException::class)
     override fun parse(reader: StringReader): MutableSet<IPlayer> {
         val i = reader.cursor
-        val string: String = StringArgumentType.readString(reader)
+        val string = StringArgumentType.readString(reader)
         val core = CommandHandler.core
 
-        val uuidOrNull = getUuidOrNull(string)
-        if (uuidOrNull != null) {
-            val player = core.plugin.runServer.playerManager.getPlayer(uuidOrNull)
-            if (player == null) {
+        getUuidOrNull(string)?.let { uuid ->
+            val player = core.plugin.runServer.playerManager.getPlayer(uuid) ?: run {
                 reader.cursor = i
                 throw UniversalCommandExceptionType.create(
                     core.languageHandler.getMessage(
@@ -52,16 +50,16 @@ class OnlinePlayerArgumentType : ArgumentType<MutableSet<IPlayer>> {
         builder: SuggestionsBuilder
     ): CompletableFuture<Suggestions?>? {
         val core = CommandHandler.core
-        for (key in core.plugin.runServer.playerManager.onlinePlayers) {
-            if (key.name.lowercase(Locale.ROOT).startsWith(builder.remainingLowerCase)) builder.suggest(key.name)
+        core.plugin.runServer.playerManager.onlinePlayers.forEach { player ->
+            if (player.name.lowercase(Locale.ROOT).startsWith(builder.remainingLowerCase)) {
+                builder.suggest(player.name)
+            }
         }
         return builder.buildFuture()
     }
 
     companion object {
-        fun players(): OnlinePlayerArgumentType {
-            return OnlinePlayerArgumentType()
-        }
+        fun players(): OnlinePlayerArgumentType = OnlinePlayerArgumentType()
 
         fun getPlayers(context: CommandContext<*>, name: String?): MutableSet<IPlayer> {
             @Suppress("UNCHECKED_CAST")
@@ -69,14 +67,10 @@ class OnlinePlayerArgumentType : ArgumentType<MutableSet<IPlayer>> {
         }
 
         @Throws(CommandSyntaxException::class)
-        fun getPlayer(context: CommandContext<*>, name: String?): IPlayer {
-            val players = getPlayers(context, name)
-            if (players.size == 1) {
-                return players.iterator().next()
-            }
-            throw UniversalCommandExceptionType.create(
-                CommandHandler.core.languageHandler.getMessage("command_message_player_multi_target")
-            )
-        }
+        fun getPlayer(context: CommandContext<*>, name: String?): IPlayer =
+            getPlayers(context, name).singleOrNull()
+                ?: throw UniversalCommandExceptionType.create(
+                    CommandHandler.core.languageHandler.getMessage("command_message_player_multi_target")
+                )
     }
 }
