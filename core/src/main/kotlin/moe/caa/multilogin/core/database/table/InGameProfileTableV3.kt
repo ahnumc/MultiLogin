@@ -1,7 +1,6 @@
 package moe.caa.multilogin.core.database.table
 
 import moe.caa.multilogin.api.internal.logger.LoggerProvider
-import moe.caa.multilogin.api.internal.util.Pair
 import moe.caa.multilogin.api.internal.util.ValueUtil.bytesToUuid
 import moe.caa.multilogin.api.internal.util.ValueUtil.uuidToBytes
 import moe.caa.multilogin.core.database.SQLManager

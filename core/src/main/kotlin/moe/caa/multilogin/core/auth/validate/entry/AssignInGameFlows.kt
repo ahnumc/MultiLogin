@@ -1,7 +1,6 @@
 package moe.caa.multilogin.core.auth.validate.entry
 
 import moe.caa.multilogin.api.internal.logger.LoggerProvider
-import moe.caa.multilogin.api.internal.util.Pair
 import moe.caa.multilogin.api.internal.util.ValueUtil.isEmpty
 import moe.caa.multilogin.core.auth.validate.ValidateContext
 import moe.caa.multilogin.core.main.MultiCore
@@ -72,8 +71,8 @@ class AssignInGameFlows(private val core: MultiCore) : BaseFlows<ValidateContext
                     player?.sendMessagePL(
                         core.languageHandler.getMessage(
                             "name_correct_info",
-                            Pair<Any?, Any?>("old_name", initFixName),
-                            Pair<Any?, Any?>("new_name", finalFixName)
+                            "old_name" to initFixName,
+                            "new_name" to finalFixName
                         )
                     )
                 }, 2000)
@@ -90,7 +89,7 @@ class AssignInGameFlows(private val core: MultiCore) : BaseFlows<ValidateContext
                 ctx.setDisallowMessage(
                     core.languageHandler.getMessage(
                         "auth_validate_failed_username_repeated",
-                        Pair<Any?, Any?>("name", ctx.inGameProfile.name)
+                        "name" to ctx.inGameProfile.name
                     )
                 )
                 return Signal.TERMINATED
@@ -105,7 +104,7 @@ class AssignInGameFlows(private val core: MultiCore) : BaseFlows<ValidateContext
                 ctx.setDisallowMessage(
                     core.languageHandler.getMessage(
                         "auth_validate_failed_username_repeated",
-                        Pair<Any?, Any?>("name", ctx.inGameProfile.name)
+                        "name" to ctx.inGameProfile.name
                     )
                 )
                 return Signal.TERMINATED

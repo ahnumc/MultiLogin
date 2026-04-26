@@ -216,7 +216,7 @@ class UserDataTableV3(
             "SELECT $fieldOnlineName, $fieldServiceId, $fieldOnlineUUID, $fieldInGameProfileUuid FROM $tableName WHERE $fieldWhitelist = true"
         else
             "SELECT $fieldOnlineName FROM $tableName WHERE $fieldWhitelist = true"
-        val commandCore = requireNotNull(CommandHandler.core)
+        val commandCore = CommandHandler.core
         return pool.queryAll(sql) {
             if (verbose) {
                 val serviceId = getInt(2)

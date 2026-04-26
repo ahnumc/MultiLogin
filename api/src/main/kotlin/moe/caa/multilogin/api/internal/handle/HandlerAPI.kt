@@ -1,7 +1,6 @@
 package moe.caa.multilogin.api.internal.handle
 
 import moe.caa.multilogin.api.internal.plugin.IPlayer
-import moe.caa.multilogin.api.internal.util.Pair
 import moe.caa.multilogin.api.profile.GameProfile
 import org.jetbrains.annotations.ApiStatus
 import java.util.*

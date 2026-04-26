@@ -4,7 +4,6 @@ import com.mojang.brigadier.StringReader
 import com.mojang.brigadier.arguments.ArgumentType
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.exceptions.CommandSyntaxException
-import moe.caa.multilogin.api.internal.util.Pair
 import moe.caa.multilogin.api.internal.util.ValueUtil.getUuidOrNull
 import moe.caa.multilogin.core.command.CommandHandler
 import moe.caa.multilogin.core.command.UniversalCommandExceptionType
@@ -23,9 +22,9 @@ class UUIDArgumentType private constructor() : ArgumentType<UUID> {
         if (ret == null) {
             reader.cursor = argBeginning
             throw UniversalCommandExceptionType.create(
-                requireNotNull(CommandHandler.core).languageHandler.getMessage(
+                CommandHandler.core.languageHandler.getMessage(
                     "command_exception_reader_invalid_uuid",
-                    Pair<Any?, Any?>("value", uuidString)
+                    "value" to uuidString
                 ), reader
             )
         }

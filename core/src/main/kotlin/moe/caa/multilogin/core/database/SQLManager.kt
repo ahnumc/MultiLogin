@@ -15,16 +15,16 @@ import java.sql.SQLException
  * 数据库管理程序
  */
 class SQLManager(val core: MultiCore) {
-    var pool: ISQLConnectionPool? = null
+    lateinit var pool: ISQLConnectionPool
         private set
 
-    var inGameProfileTable: InGameProfileTableV3? = null
+    lateinit var inGameProfileTable: InGameProfileTableV3
         private set
 
-    var userDataTable: UserDataTableV3? = null
+    lateinit var userDataTable: UserDataTableV3
         private set
 
-    var skinRestoredCacheTable: SkinRestoredCacheTableV2? = null
+    lateinit var skinRestoredCacheTable: SkinRestoredCacheTableV2
         private set
 
 
@@ -54,16 +54,18 @@ class SQLManager(val core: MultiCore) {
         skinRestoredCacheTable = SkinRestoredCacheTableV2(this, skinRestorerCacheTableNameV2)
         inGameProfileTable = InGameProfileTableV3(this, inGameProfileTableNameV3, inGameProfileTableNameV2)
 
-        requireNotNull(pool).connection.use { connection ->
+        pool.connection.use { connection ->
             connection.setAutoCommit(false)
-            requireNotNull(userDataTable).init(connection)
-            requireNotNull(inGameProfileTable).init(connection)
-            requireNotNull(skinRestoredCacheTable).init(connection)
+            userDataTable.init(connection)
+            inGameProfileTable.init(connection)
+            skinRestoredCacheTable.init(connection)
             connection.commit()
         }
     }
 
     fun close() {
-        pool?.close()
+        if (::pool.isInitialized) {
+            pool.close()
+        }
     }
 }

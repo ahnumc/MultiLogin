@@ -25,8 +25,8 @@ class YggdrasilAuthenticationService(private val core: MultiCore) {
         if (ids.size == 1) {
             primaries.add(ids.first())
         } else {
-            core.sqlManager.inGameProfileTable!!.getInGameUUIDIgnoreCase(username ?: "")?.let {
-                primaries.addAll(core.sqlManager.userDataTable!!.getOnlineServiceIds(it))
+            core.sqlManager.inGameProfileTable.getInGameUUIDIgnoreCase(username ?: "")?.let {
+                primaries.addAll(core.sqlManager.userDataTable.getOnlineServiceIds(it))
             }
         }
 

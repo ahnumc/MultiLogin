@@ -33,16 +33,16 @@ object ValueUtil {
     @JvmStatic
     fun isEmpty(str: String?): Boolean = str.isNullOrEmpty()
 
-    fun transPapi(s: String, vararg pairs: Pair<*, *>): String =
+    fun transPapi(s: String, vararg pairs: kotlin.Pair<String, Any?>): String =
         pairs.foldIndexed(s) { i, acc, pair ->
-            acc.replace("{${pair.value1}}", pair.value2.toString())
-                .replace("{$i}", pair.value2.toString())
+            acc.replace("{${pair.first}}", pair.second.toString())
+                .replace("{$i}", pair.second.toString())
         }
 
-    fun transPapi(s: String, pairs: MutableList<Pair<*, *>>): String =
+    fun transPapi(s: String, pairs: MutableList<kotlin.Pair<String, Any?>>): String =
         pairs.foldIndexed(s) { i, acc, pair ->
-            acc.replace("{${pair.value1}}", pair.value2.toString())
-                .replace("{$i}", pair.value2.toString())
+            acc.replace("{${pair.first}}", pair.second.toString())
+                .replace("{$i}", pair.second.toString())
         }
 
     fun join(delimiter: CharSequence, lastDelimiter: CharSequence?, vararg elements: Any?): String {

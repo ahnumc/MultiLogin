@@ -14,7 +14,7 @@ class WhitelistCheckFlows(private val core: MultiCore) : BaseFlows<ValidateConte
         val response = requireNotNull(authResult.response)
         val serviceConfig = requireNotNull(authResult.serviceConfig)
         val onlineUUID = requireNotNull(response.id)
-        val dataTable = core.sqlManager.userDataTable!!
+        val dataTable = core.sqlManager.userDataTable
 
         val removed = core.cacheWhitelistHandler.cachedWhitelist.remove(
             response.name?.lowercase(Locale.ROOT)

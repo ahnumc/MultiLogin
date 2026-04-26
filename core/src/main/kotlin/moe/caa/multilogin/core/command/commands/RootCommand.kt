@@ -3,7 +3,6 @@ package moe.caa.multilogin.core.command.commands
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
 import moe.caa.multilogin.api.internal.plugin.ISender
-import moe.caa.multilogin.api.internal.util.Pair
 import moe.caa.multilogin.core.command.CommandHandler
 import moe.caa.multilogin.core.command.Permissions
 import moe.caa.multilogin.core.command.argument.StringArgumentType
@@ -51,7 +50,7 @@ class RootCommand(private val handler: CommandHandler) {
 
     private fun executeList(context: CommandContext<ISender?>): Int {
         val sender = requireNotNull(context.source)
-        val core = requireNotNull(CommandHandler.core)
+        val core = CommandHandler.core
         val onlinePlayers = core.plugin.runServer.playerManager.onlinePlayers
 
         val identifiedPlayerMap = mutableMapOf<Int, MutableList<moe.caa.multilogin.api.internal.plugin.IPlayer>>()
@@ -75,23 +74,23 @@ class RootCommand(private val handler: CommandHandler) {
             val playerListStr = players.joinToString(playerDelimiter ?: "") { p ->
                 core.languageHandler.getMessage(
                     "command_message_list_player_entry",
-                    Pair<Any?, Any?>("name", p.name)
+                    "name" to p.name
                 )
             }
             core.languageHandler.getMessage(
                 "command_message_list_entry",
-                Pair<Any?, Any?>("service_name", sname),
-                Pair<Any?, Any?>("service_id", key),
-                Pair<Any?, Any?>("count", players.size),
-                Pair<Any?, Any?>("list", playerListStr)
+                "service_name" to sname,
+                "service_id" to key,
+                "count" to players.size,
+                "list" to playerListStr
             )
         }
 
         sender.sendMessagePL(
             core.languageHandler.getMessage(
                 "command_message_list",
-                Pair<Any?, Any?>("list", listStr),
-                Pair<Any?, Any?>("count", onlinePlayers.size)
+                "list" to listStr,
+                "count" to onlinePlayers.size
             )
         )
         return 0
@@ -104,14 +103,14 @@ class RootCommand(private val handler: CommandHandler) {
             "command_message_erase_all_username_desc",
             "command_message_erase_all_username_cq"
         ) {
-            val core = requireNotNull(CommandHandler.core)
-            val i = core.sqlManager.inGameProfileTable!!.eraseAllUsername()
+            val core = CommandHandler.core
+            val i = core.sqlManager.inGameProfileTable.eraseAllUsername()
             val kickMsg = core.languageHandler.getMessage("in_game_username_occupy_all")
             core.plugin.runServer.playerManager.kickAll(kickMsg)
             sender.sendMessagePL(
                 core.languageHandler.getMessage(
                     "command_message_erase_all_username_done",
-                    Pair<Any?, Any?>("count", i)
+                    "count" to i
                 )
             )
         }
@@ -127,14 +126,14 @@ class RootCommand(private val handler: CommandHandler) {
     @Throws(Exception::class)
     private fun executeEraseUsername(context: CommandContext<ISender?>): Int {
         val sender = requireNotNull(context.source)
-        val core = requireNotNull(CommandHandler.core)
+        val core = CommandHandler.core
         val string = StringArgumentType.getString(context, "username").lowercase()
-        val ignoreCase = core.sqlManager.inGameProfileTable!!.getInGameUUIDIgnoreCase(string)
+        val ignoreCase = core.sqlManager.inGameProfileTable.getInGameUUIDIgnoreCase(string)
             ?: run {
                 sender.sendMessagePL(
                     core.languageHandler.getMessage(
                         "command_message_erase_username_none",
-                        Pair<Any?, Any?>("name", string)
+                        "name" to string
                     )
                 )
                 return 0
@@ -144,17 +143,17 @@ class RootCommand(private val handler: CommandHandler) {
             sender,
             "command_message_erase_username_desc",
             "command_message_erase_username_cq",
-            Pair<Any?, Any?>("name", string)
+            "name" to string
         ) {
-            val i = core.sqlManager.inGameProfileTable!!.eraseUsername(string)
+            val i = core.sqlManager.inGameProfileTable.eraseUsername(string)
             val kickMsg = core.languageHandler.getMessage(
                 "in_game_username_occupy",
-                Pair<Any?, Any?>("name", string)
+                "name" to string
             )
             core.plugin.runServer.playerManager.kickPlayerIfOnline(string, kickMsg)
             val msgKey = if (i == 0) "command_message_erase_username_none" else "command_message_erase_username_done"
             sender.sendMessagePL(
-                core.languageHandler.getMessage(msgKey, Pair<Any?, Any?>("name", string))
+                core.languageHandler.getMessage(msgKey, "name" to string)
             )
         }
         return 0
@@ -163,7 +162,7 @@ class RootCommand(private val handler: CommandHandler) {
     @Throws(Exception::class)
     private fun executeReload(context: CommandContext<ISender?>): Int {
         val sender = requireNotNull(context.source)
-        val core = requireNotNull(CommandHandler.core)
+        val core = CommandHandler.core
         core.reload()
         sender.sendMessagePL(core.languageHandler.getMessage("command_message_reloaded"))
         return 0

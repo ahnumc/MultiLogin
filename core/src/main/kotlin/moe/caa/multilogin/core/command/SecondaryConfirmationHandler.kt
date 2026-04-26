@@ -2,7 +2,6 @@ package moe.caa.multilogin.core.command
 
 import moe.caa.multilogin.api.internal.plugin.IPlayer
 import moe.caa.multilogin.api.internal.plugin.ISender
-import moe.caa.multilogin.api.internal.util.Pair
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
@@ -22,7 +21,7 @@ class SecondaryConfirmationHandler {
         desc: String,
         consequences: String
     ) {
-        val currentCore = requireNotNull(CommandHandler.core)
+        val currentCore = CommandHandler.core
         when {
             sender.isPlayer -> concurrentHashMap[requireNotNull(sender.asPlayer)] = ConfirmEntry(callbackConfirmCommand)
             sender.isConsole -> consoleConfirm.set(ConfirmEntry(callbackConfirmCommand))
@@ -35,8 +34,8 @@ class SecondaryConfirmationHandler {
         sender.sendMessagePL(
             currentCore.languageHandler.getMessage(
                 "command_message_confirm_warning",
-                Pair<Any?, Any?>("desc", desc),
-                Pair<Any?, Any?>("consequences", consequences)
+                "desc" to desc,
+                "consequences" to consequences
             )
         )
     }
@@ -46,7 +45,7 @@ class SecondaryConfirmationHandler {
      */
     @Throws(Exception::class)
     fun confirm(sender: ISender) {
-        val currentCore = requireNotNull(CommandHandler.core)
+        val currentCore = CommandHandler.core
         concurrentHashMap.values.removeIf { it.isInvalid }
         consoleConfirm.updateAndGet { it?.takeUnless { e -> e.isInvalid } }
 
@@ -80,7 +79,7 @@ class SecondaryConfirmationHandler {
         private val subTime: Long = System.currentTimeMillis()
 
         val isInvalid: Boolean
-            get() = subTime + requireNotNull(CommandHandler.core).pluginConfig
+            get() = subTime + CommandHandler.core.pluginConfig
                 .confirmCommandValidTimeMills < System.currentTimeMillis()
 
         @Throws(Exception::class)

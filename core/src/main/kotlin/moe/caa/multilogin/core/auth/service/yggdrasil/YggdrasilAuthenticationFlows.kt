@@ -1,6 +1,5 @@
 package moe.caa.multilogin.core.auth.service.yggdrasil
 
-import moe.caa.multilogin.api.internal.util.Pair
 import moe.caa.multilogin.api.profile.GameProfile
 import moe.caa.multilogin.core.configuration.service.yggdrasil.BaseYggdrasilServiceConfig
 import moe.caa.multilogin.core.configuration.service.yggdrasil.BaseYggdrasilServiceConfig.HttpRequestMethod

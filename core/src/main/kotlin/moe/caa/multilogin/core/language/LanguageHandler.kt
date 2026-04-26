@@ -3,7 +3,6 @@ package moe.caa.multilogin.core.language
 import moe.caa.multilogin.api.internal.language.LanguageAPI
 import moe.caa.multilogin.api.internal.logger.LoggerProvider
 import moe.caa.multilogin.api.internal.util.IOUtil.copy
-import moe.caa.multilogin.api.internal.util.Pair
 import moe.caa.multilogin.api.internal.util.ValueUtil.transPapi
 import moe.caa.multilogin.core.main.MultiCore
 import java.io.*
@@ -18,7 +17,7 @@ class LanguageHandler(private val core: MultiCore) : LanguageAPI {
         reload()
     }
 
-    override fun getMessage(node: String?, vararg pairs: Pair<*, *>): String {
+    override fun getMessage(node: String?, vararg pairs: kotlin.Pair<String, Any?>): String {
         return transPapi(language.getProperty(node), *pairs)
     }
 

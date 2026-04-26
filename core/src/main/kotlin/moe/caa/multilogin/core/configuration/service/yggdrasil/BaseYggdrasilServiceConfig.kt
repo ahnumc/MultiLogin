@@ -1,7 +1,5 @@
 package moe.caa.multilogin.core.configuration.service.yggdrasil
-import moe.caa.multilogin.api.internal.util.Pair
 
-import moe.caa.multilogin.api.internal.util.ValueUtil
 import moe.caa.multilogin.api.internal.util.ValueUtil.isEmpty
 import moe.caa.multilogin.api.internal.util.ValueUtil.transPapi
 import moe.caa.multilogin.core.configuration.ProxyConfig
@@ -29,9 +27,9 @@ abstract class BaseYggdrasilServiceConfig protected constructor(
     fun generateAuthURL(username: String, serverId: String, ip: String?): String {
         return transPapi(
             this.authURL!!,
-            Pair<Any?, Any?>("username", URLEncoder.encode(username, StandardCharsets.UTF_8)),
-            Pair<Any?, Any?>("serverId", URLEncoder.encode(serverId, StandardCharsets.UTF_8)),
-            Pair<Any?, Any?>("ip", generateTraceIpContent(ip))
+            "username" to URLEncoder.encode(username, StandardCharsets.UTF_8),
+            "serverId" to URLEncoder.encode(serverId, StandardCharsets.UTF_8),
+            "ip" to generateTraceIpContent(ip)
         )
     }
 
@@ -42,9 +40,9 @@ abstract class BaseYggdrasilServiceConfig protected constructor(
     fun generateAuthPostContent(username: String, serverId: String, ip: String?): String {
         return transPapi(
             this.authPostContent!!,
-            Pair<Any?, Any?>("username", URLEncoder.encode(username, StandardCharsets.UTF_8)),
-            Pair<Any?, Any?>("serverId", URLEncoder.encode(serverId, StandardCharsets.UTF_8)),
-            Pair<Any?, Any?>("ip", generateTraceIpContent(ip))
+            "username" to URLEncoder.encode(username, StandardCharsets.UTF_8),
+            "serverId" to URLEncoder.encode(serverId, StandardCharsets.UTF_8),
+            "ip" to generateTraceIpContent(ip)
         )
     }
 
@@ -61,7 +59,7 @@ abstract class BaseYggdrasilServiceConfig protected constructor(
         }
         return transPapi(
             trackIpContent,
-            Pair<Any?, Any?>("ip", ip)
+            "ip" to ip
         )
     }
 

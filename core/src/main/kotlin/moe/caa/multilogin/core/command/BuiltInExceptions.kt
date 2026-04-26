@@ -5,7 +5,6 @@ import com.mojang.brigadier.exceptions.BuiltInExceptionProvider
 import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType
-import moe.caa.multilogin.api.internal.util.Pair
 import moe.caa.multilogin.core.main.MultiCore
 
 class BuiltInExceptions(core: MultiCore) : BuiltInExceptionProvider {
@@ -47,7 +46,7 @@ class BuiltInExceptions(core: MultiCore) : BuiltInExceptionProvider {
     private val CACHE_NOT_FOUND_OTHER: Dynamic2CommandExceptionType
 
     init {
-        fun msg(key: String, vararg args: Pair<Any?, Any?>) =
+        fun msg(key: String, vararg args: kotlin.Pair<String, Any?>) =
             LiteralMessage(core.languageHandler.getMessage(key, *args))
         DOUBLE_TOO_SMALL = Dynamic2CommandExceptionType { found, min ->
             msg("command_exception_double_too_small", Pair("found", found), Pair("min", min))

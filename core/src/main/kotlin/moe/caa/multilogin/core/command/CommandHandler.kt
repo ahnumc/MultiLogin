@@ -10,7 +10,6 @@ import moe.caa.multilogin.api.internal.command.CommandAPI
 import moe.caa.multilogin.api.internal.logger.LoggerProvider
 import moe.caa.multilogin.api.internal.plugin.IPlayer
 import moe.caa.multilogin.api.internal.plugin.ISender
-import moe.caa.multilogin.api.internal.util.Pair
 import moe.caa.multilogin.api.profile.GameProfile
 import moe.caa.multilogin.core.command.commands.RootCommand
 import moe.caa.multilogin.core.main.MultiCore
@@ -130,7 +129,7 @@ fun CommandHandler.submitConfirm(
     sender: ISender,
     descKey: String,
     cqKey: String,
-    vararg args: Pair<Any?, Any?>,
+    vararg args: kotlin.Pair<String, Any?>,
     action: () -> Unit
 ) {
     val currentCore = CommandHandler.core

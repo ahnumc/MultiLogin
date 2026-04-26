@@ -109,9 +109,7 @@ class SkinRestorerCore(private val core: MultiCore) : SkinRestorerAPI {
         private val ALLOWED_DOMAINS: Array<String> = arrayOf(".minecraft.net", ".mojang.com")
         private val BLOCKED_DOMAINS: Array<String> =
             arrayOf("bugs.mojang.com", "education.minecraft.net", "feedback.minecraft.net")
-        private var publicKey: PublicKey? = null
-
-        init {
+        private val publicKey: PublicKey =
             try {
                 val spec = X509EncodedKeySpec(
                     byteArrayOf(
@@ -146,18 +144,17 @@ class SkinRestorerCore(private val core: MultiCore) : SkinRestorerAPI {
                     )
                 )
                 val keyFactory = KeyFactory.getInstance("RSA")
-                publicKey = keyFactory.generatePublic(spec)
+                keyFactory.generatePublic(spec)
             } catch (e: Exception) {
                 throw RuntimeException(
                     "An exception occurred during the generation of yggdrasil session public key.", e
                 )
             }
-        }
 
         @Throws(InvalidKeyException::class, NoSuchAlgorithmException::class, SignatureException::class)
         private fun isSignatureValid(value: String, signatureValue: String?): Boolean {
             val signature = Signature.getInstance("SHA1withRSA")
-            signature.initVerify(requireNotNull(publicKey))
+            signature.initVerify(publicKey)
             signature.update(value.toByteArray())
             return signature.verify(Base64.getDecoder().decode(signatureValue))
         }

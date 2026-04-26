@@ -5,7 +5,6 @@ import moe.caa.multilogin.api.internal.handle.HandleResult
 import moe.caa.multilogin.api.internal.handle.HandlerAPI
 import moe.caa.multilogin.api.internal.logger.LoggerProvider
 import moe.caa.multilogin.api.internal.plugin.IPlayer
-import moe.caa.multilogin.api.internal.util.Pair
 import moe.caa.multilogin.api.profile.GameProfile
 import moe.caa.multilogin.api.service.IService
 import moe.caa.multilogin.core.configuration.service.BaseServiceConfig
@@ -59,18 +58,18 @@ class PlayerHandler(private val core: MultiCore) : HandlerAPI {
             val msg = if (pair == null) {
                 core.languageHandler.getMessage(
                     "welcome_msg_to_unknown",
-                    Pair<Any?, Any?>("profile_name", player.name),
-                    Pair<Any?, Any?>("profile_uuid", player.name)
+                    "profile_name" to player.name,
+                    "profile_uuid" to player.name
                 )
             } else {
                 core.languageHandler.getMessage(
                     "welcome_msg",
-                    Pair<Any?, Any?>("online_name", pair.value1?.name),
-                    Pair<Any?, Any?>("online_uuid", pair.value1?.id),
-                    Pair<Any?, Any?>("service_name", pair.value2?.serviceName),
-                    Pair<Any?, Any?>("service_id", pair.value2?.serviceId),
-                    Pair<Any?, Any?>("profile_name", player.name),
-                    Pair<Any?, Any?>("profile_uuid", player.uniqueId)
+                    "online_name" to pair.value1?.name,
+                    "online_uuid" to pair.value1?.id,
+                    "service_name" to pair.value2?.serviceName,
+                    "service_id" to pair.value2?.serviceId,
+                    "profile_name" to player.name,
+                    "profile_uuid" to player.uniqueId
                 )
             }
             player.sendMessagePL(msg)

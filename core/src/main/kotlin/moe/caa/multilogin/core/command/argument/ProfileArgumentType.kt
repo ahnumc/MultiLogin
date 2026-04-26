@@ -6,7 +6,6 @@ import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.exceptions.CommandSyntaxException
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
-import moe.caa.multilogin.api.internal.util.Pair
 import moe.caa.multilogin.api.internal.util.ValueUtil.getUuidOrNull
 import moe.caa.multilogin.core.command.CommandHandler
 import moe.caa.multilogin.core.command.UniversalCommandExceptionType
@@ -24,7 +23,8 @@ class ProfileArgumentType : ArgumentType<ProfileArgumentType.ProfileArgument> {
 
         val nameOrUuid: String = StringArgumentType.readString(reader)
 
-        val table = CommandHandler.core!!.sqlManager.inGameProfileTable!!
+        val currentCore = CommandHandler.core
+        val table = currentCore.sqlManager.inGameProfileTable
 
         var uuid = getUuidOrNull(nameOrUuid)
         if (uuid == null) {
@@ -32,9 +32,9 @@ class ProfileArgumentType : ArgumentType<ProfileArgumentType.ProfileArgument> {
             if (uuid == null) {
                 reader.cursor = i
                 throw UniversalCommandExceptionType.create(
-                    CommandHandler.core!!.languageHandler.getMessage(
+                    currentCore.languageHandler.getMessage(
                         "command_message_profile_not_found_by_name",
-                        Pair<Any?, Any?>("name", nameOrUuid)
+                        "name" to nameOrUuid
                     ), reader
                 )
             }
@@ -45,9 +45,9 @@ class ProfileArgumentType : ArgumentType<ProfileArgumentType.ProfileArgument> {
         if (username == null) {
             reader.cursor = i
             throw UniversalCommandExceptionType.create(
-                CommandHandler.core!!.languageHandler.getMessage(
+                currentCore.languageHandler.getMessage(
                     "command_message_profile_not_found_by_uuid",
-                    Pair<Any?, Any?>("uuid", uuid)
+                    "uuid" to uuid
                 ), reader
             )
         }
@@ -63,7 +63,7 @@ class ProfileArgumentType : ArgumentType<ProfileArgumentType.ProfileArgument> {
         context: CommandContext<S?>?,
         builder: SuggestionsBuilder
     ): CompletableFuture<Suggestions?>? {
-        for (key in CommandHandler.core!!.plugin.runServer.playerManager.onlinePlayers) {
+        for (key in CommandHandler.core.plugin.runServer.playerManager.onlinePlayers) {
             if (key.name.lowercase(Locale.ROOT).startsWith(builder.remainingLowerCase)) builder.suggest(key.name)
         }
         return builder.buildFuture()
