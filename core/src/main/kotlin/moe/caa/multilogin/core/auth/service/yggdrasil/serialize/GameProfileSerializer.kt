@@ -1,53 +1,65 @@
 package moe.caa.multilogin.core.auth.service.yggdrasil.serialize
 
-import com.google.gson.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.element
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.JsonDecoder
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import moe.caa.multilogin.api.internal.util.ValueUtil.getUuidOrNull
 import moe.caa.multilogin.api.profile.GameProfile
 import moe.caa.multilogin.api.profile.Property
-import moe.caa.multilogin.core.auth.service.yggdrasil.UnmodifiableGameProfile
-import java.lang.reflect.Type
 
-/**
- * GameProfile 的 GSON 序列化程序
- */
-class GameProfileSerializer : JsonSerializer<GameProfile?>, JsonDeserializer<GameProfile?> {
-    @Throws(JsonParseException::class)
-    override fun deserialize(json: JsonElement, typeOfT: Type?, context: JsonDeserializationContext): GameProfile {
-        val ret = GameProfile()
-        if (json.isJsonObject) {
-            val root = json.asJsonObject
-            ret.id = getUuidOrNull(root.get("id").asString)
-            if (root.has("name")) ret.name = root.get("name").asString
-            val propertiesJsonElement = root.get("properties")
-            propertiesJsonElement?.let { props ->
-                if (props.isJsonObject) {
-                    for (entry in props.asJsonObject.entrySet()) {
-                        if (entry.value.isJsonArray) {
-                            for (ignored in entry.value.asJsonArray) {
-                                ret.propertyMap[entry.key] = context.deserialize(ignored, Property::class.java)
-                            }
-                        }
-                    }
-                } else if (props.isJsonArray) {
-                    for (element in props.asJsonArray) {
-                        val value = context.deserialize<Property>(element, Property::class.java)
-                        value.name?.let { ret.propertyMap[it] = value }
-                    }
+object GameProfileSerializer : KSerializer<GameProfile> {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("GameProfile") {
+        element<String>("id")
+        element<String>("name", isOptional = true)
+        element<List<Property>>("properties", isOptional = true)
+    }
+
+    override fun deserialize(decoder: Decoder): GameProfile {
+        val json = (decoder as JsonDecoder).decodeJsonElement().jsonObject
+        val id = requireNotNull(getUuidOrNull(json["id"]!!.jsonPrimitive.content)) {
+            "Invalid UUID in GameProfile"
+        }
+        val name = json["name"]?.jsonPrimitive?.content ?: ""
+        val propertyMap = mutableMapOf<String, Property>()
+        json["properties"]?.let { propsEl ->
+            // Mojang format: array of {name, value, signature?}
+            if (propsEl is kotlinx.serialization.json.JsonArray) {
+                for (el in propsEl.jsonArray) {
+                    val obj = el.jsonObject
+                    val prop = Property(
+                        name = obj["name"]?.jsonPrimitive?.content ?: "",
+                        value = obj["value"]?.jsonPrimitive?.content ?: "",
+                        signature = obj["signature"]?.jsonPrimitive?.content
+                    )
+                    propertyMap[prop.name] = prop
                 }
             }
         }
-        return UnmodifiableGameProfile.unmodifiable(ret)
+        return GameProfile(id, name, propertyMap)
     }
 
-    override fun serialize(src: GameProfile?, typeOfSrc: Type?, context: JsonSerializationContext): JsonElement {
-        val ret = JsonObject()
-        src?.id?.toString()?.replace("-", "")?.let { ret.addProperty("id", it) }
-        src?.name?.let { ret.addProperty("name", it) }
-        val propertiesJsonArray = JsonArray()
-        ret.add("properties", propertiesJsonArray)
-        for (entry in src?.propertyMap.orEmpty()) {
-            propertiesJsonArray.add(context.serialize(entry.value, Property::class.java))
+    override fun serialize(encoder: Encoder, value: GameProfile) {
+        val jsonEncoder = encoder as kotlinx.serialization.json.JsonEncoder
+        val obj = kotlinx.serialization.json.buildJsonObject {
+            put("id", kotlinx.serialization.json.JsonPrimitive(value.id.toString().replace("-", "")))
+            put("name", kotlinx.serialization.json.JsonPrimitive(value.name))
+            put("properties", kotlinx.serialization.json.buildJsonArray {
+                for ((_, prop) in value.propertyMap) {
+                    add(kotlinx.serialization.json.buildJsonObject {
+                        put("name", kotlinx.serialization.json.JsonPrimitive(prop.name))
+                        put("value", kotlinx.serialization.json.JsonPrimitive(prop.value))
+                        prop.signature?.let { put("signature", kotlinx.serialization.json.JsonPrimitive(it)) }
+                    })
+                }
+            })
         }
-        return ret
+        jsonEncoder.encodeJsonElement(obj)
     }
 }

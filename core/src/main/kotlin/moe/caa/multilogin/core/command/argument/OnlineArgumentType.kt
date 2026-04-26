@@ -41,7 +41,7 @@ class OnlineArgumentType : ArgumentType<OnlineArgumentType.OnlineArgument> {
                     currentCore.languageHandler.getMessage(
                         "command_message_online_not_found_by_name",
                         "service_name" to serviceConfig.serviceName,
-                        "service_id" to serviceConfig.serviceId,
+                        "service_id" to serviceConfig.serviceId.toString(),
                         "online_name" to nameOrUuid
                     ), reader
                 )
@@ -54,8 +54,8 @@ class OnlineArgumentType : ArgumentType<OnlineArgumentType.OnlineArgument> {
                 currentCore.languageHandler.getMessage(
                     "command_message_online_not_found_by_uuid",
                     "service_name" to serviceConfig.serviceName,
-                    "service_id" to serviceConfig.serviceId,
-                    "online_uuid" to uuid
+                    "service_id" to serviceConfig.serviceId.toString(),
+                    "online_uuid" to uuid.toString()
                 ), reader
             )
         }

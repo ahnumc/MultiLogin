@@ -10,5 +10,5 @@ interface LanguageAPI {
      * @param node 节点
      * @return 可读文本字符串对象
      */
-    fun getMessage(node: String?, vararg pairs: Pair<String, Any?>): String?
+    fun getMessage(node: String?, vararg pairs: Pair<String, Any?>): String
 }

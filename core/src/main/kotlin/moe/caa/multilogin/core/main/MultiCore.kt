@@ -1,7 +1,6 @@
 package moe.caa.multilogin.core.main
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
+import kotlinx.serialization.json.Json
 import moe.caa.multilogin.api.MapperConfigAPI
 import moe.caa.multilogin.api.MultiLoginAPI
 import moe.caa.multilogin.api.MultiLoginAPIProvider.setApi
@@ -9,12 +8,8 @@ import moe.caa.multilogin.api.data.MultiLoginPlayerData
 import moe.caa.multilogin.api.internal.logger.LoggerProvider
 import moe.caa.multilogin.api.internal.main.MultiCoreAPI
 import moe.caa.multilogin.api.internal.plugin.IPlugin
-import moe.caa.multilogin.api.profile.GameProfile
-import moe.caa.multilogin.api.profile.Property
 import moe.caa.multilogin.core.auth.AuthHandler
 import moe.caa.multilogin.core.auth.service.floodgate.FloodgateAuthenticationService
-import moe.caa.multilogin.core.auth.service.yggdrasil.serialize.GameProfileSerializer
-import moe.caa.multilogin.core.auth.service.yggdrasil.serialize.PropertySerializer
 import moe.caa.multilogin.core.command.CommandHandler
 import moe.caa.multilogin.core.configuration.PluginConfig
 import moe.caa.multilogin.core.configuration.service.BaseServiceConfig
@@ -43,10 +38,7 @@ class MultiCore(override val plugin: IPlugin) : MultiCoreAPI, MultiLoginAPI {
     override val languageHandler: LanguageHandler = LanguageHandler(this)
     override val playerHandler: PlayerHandler = PlayerHandler(this)
     val cacheWhitelistHandler: CacheWhitelistHandler = CacheWhitelistHandler()
-    val gson: Gson = GsonBuilder()
-        .setPrettyPrinting()
-        .registerTypeAdapter(GameProfile::class.java, GameProfileSerializer())
-        .registerTypeAdapter(Property::class.java, PropertySerializer()).create()
+    val gson: Json = Json { ignoreUnknownKeys = true }
     var semVersion: SemVersion? = null
     var floodgateSupported = false
     val httpRequestHeaderUserAgent = "MultiLogin/v2.0"

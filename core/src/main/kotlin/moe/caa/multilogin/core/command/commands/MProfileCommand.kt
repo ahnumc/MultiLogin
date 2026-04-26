@@ -110,7 +110,7 @@ class MProfileCommand(private val handler: CommandHandler) {
         val profile = ProfileArgumentType.getProfile(context, "profile")
         val pair = handler.requireDataCacheArgumentSelf(context)
 
-        processSet(context, pair.first?.id, pair.first?.name, requireNotNull(pair.second), profile)
+        processSet(context, pair.profile?.id, pair.profile?.name, requireNotNull(pair.serviceId), profile)
         return 0
     }
 

@@ -4,7 +4,6 @@ import moe.caa.multilogin.api.internal.auth.AuthResult
 import moe.caa.multilogin.api.internal.util.ValueUtil.xuidToUUID
 import moe.caa.multilogin.api.profile.GameProfile
 import moe.caa.multilogin.core.auth.LoginAuthResult
-import moe.caa.multilogin.core.auth.service.yggdrasil.UnmodifiableGameProfile
 import moe.caa.multilogin.core.main.MultiCore
 import org.geysermc.event.PostOrder
 import org.geysermc.event.subscribe.Subscribe
@@ -41,7 +40,7 @@ class FloodgateAuthenticationService(private val multiCore: MultiCore) : Handsha
         val data = handshakeData.bedrockData
         val xuid = data.xuid
         val uuid = xuidToUUID(xuid)
-        val profile: GameProfile = UnmodifiableGameProfile(
+        val profile: GameProfile = GameProfile(
             uuid,
             initBedrockUsername(handshakeData.bedrockData.username),
             mutableMapOf()

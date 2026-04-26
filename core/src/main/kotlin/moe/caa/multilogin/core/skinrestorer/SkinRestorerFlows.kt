@@ -9,8 +9,10 @@ import moe.caa.multilogin.api.profile.Property
 import moe.caa.multilogin.core.configuration.SkinRestorerConfig
 import moe.caa.multilogin.core.configuration.service.BaseServiceConfig
 import moe.caa.multilogin.core.main.MultiCore
-import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayInputStream
 import java.io.IOException
@@ -84,10 +86,7 @@ class SkinRestorerFlows(
         } catch (e: Exception) {
             LoggerProvider.logger.warn("An exception occurred while saving restored skin data.", e)
         }
-        val restoredProperty = Property()
-        restoredProperty.name = "textures"
-        restoredProperty.value = value
-        restoredProperty.signature = signature
+        val restoredProperty = Property(name = "textures", value = value, signature = signature)
         profile.propertyMap["textures"] = restoredProperty
         return SkinRestorerResultImpl.ofRestorerSucceed(profile)
     }

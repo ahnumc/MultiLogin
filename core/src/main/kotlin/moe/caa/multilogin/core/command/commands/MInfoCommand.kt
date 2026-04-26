@@ -55,8 +55,8 @@ class MInfoCommand(private val handler: CommandHandler) {
                     )
                 )
             } else {
-                val onlineProfile = profile.first
-                val serviceId = profile.second
+                val onlineProfile = profile.profile
+                val serviceId = profile.serviceId
                 val serviceName = core.pluginConfig.serviceIdMap[serviceId]?.serviceName
                     ?: core.languageHandler.getMessage("command_message_info_unidentified_name")
                 val message = core.languageHandler.getMessage(

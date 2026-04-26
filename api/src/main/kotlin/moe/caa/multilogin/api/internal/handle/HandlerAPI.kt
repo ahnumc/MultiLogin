@@ -1,7 +1,6 @@
 package moe.caa.multilogin.api.internal.handle
 
 import moe.caa.multilogin.api.internal.plugin.IPlayer
-import moe.caa.multilogin.api.profile.GameProfile
 import org.jetbrains.annotations.ApiStatus
 import java.util.*
 
@@ -32,7 +31,7 @@ interface HandlerAPI {
      * @param inGameUUID 玩家的游戏内 UUID
      * @return 一个表示玩家在线数据和验证它的 Yggdrasil ID 的复合类
      */
-    fun getPlayerOnlineProfile(inGameUUID: UUID?): Pair<GameProfile?, Int?>?
+    fun getPlayerOnlineProfile(inGameUUID: UUID?): OnlineProfileRef?
 
     /**
      * 获得玩家游戏内 UUID

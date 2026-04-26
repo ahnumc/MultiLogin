@@ -3,6 +3,7 @@ package moe.caa.multilogin.core.handle
 import moe.caa.multilogin.api.data.MultiLoginPlayerData
 import moe.caa.multilogin.api.internal.handle.HandleResult
 import moe.caa.multilogin.api.internal.handle.HandlerAPI
+import moe.caa.multilogin.api.internal.handle.OnlineProfileRef
 import moe.caa.multilogin.api.internal.logger.LoggerProvider
 import moe.caa.multilogin.api.internal.plugin.IPlayer
 import moe.caa.multilogin.api.profile.GameProfile
@@ -78,9 +79,9 @@ class PlayerHandler(private val core: MultiCore) : HandlerAPI {
 
     fun getPlayerData(inGameUUID: UUID?): MultiLoginPlayerData? = cache[inGameUUID]
 
-    override fun getPlayerOnlineProfile(inGameUUID: UUID?): Pair<GameProfile?, Int?>? {
+    override fun getPlayerOnlineProfile(inGameUUID: UUID?): OnlineProfileRef? {
         val entry = cache[inGameUUID] ?: return null
-        return entry.onlineProfileData to entry.serviceConfig?.serviceId
+        return OnlineProfileRef(entry.onlineProfileData, entry.serviceConfig?.serviceId)
     }
 
     fun getPlayerOnlineProfile0(inGameUUID: UUID?): Pair<GameProfile?, BaseServiceConfig?>? {

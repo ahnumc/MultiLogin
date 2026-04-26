@@ -21,7 +21,8 @@ import moe.caa.multilogin.api.internal.injector.Injector
 import moe.caa.multilogin.api.internal.logger.LoggerProvider
 import moe.caa.multilogin.api.internal.main.MultiCoreAPI
 import moe.caa.multilogin.api.internal.plugin.IPlugin
-import moe.caa.multilogin.loader.main.PluginLoader
+import moe.caa.multilogin.core.main.MultiCore
+import moe.caa.multilogin.velocity.injector.VelocityInjector
 import org.slf4j.Logger
 import java.io.File
 import java.nio.file.Path
@@ -36,7 +37,6 @@ class MultiLoginVelocity @Inject constructor(
 ) : IPlugin {
     val server: VelocityServer
     override val runServer: `fun`.ksnb.multilogin.velocity.impl.VelocityServer
-    private val pluginLoader: PluginLoader
     var multiCoreAPI: MultiCoreAPI? = null
     private lateinit var injector: Injector
     private val coreApi: MultiCoreAPI
@@ -47,22 +47,14 @@ class MultiLoginVelocity @Inject constructor(
         this.server = server as VelocityServer
         this.runServer = `fun`.ksnb.multilogin.velocity.impl.VelocityServer(this.server)
         LoggerProvider.logger = Slf4jLoggerBridge(logger)
-        this.pluginLoader = PluginLoader(this)
-        try {
-            pluginLoader.load("MultiLogin-Velocity-Injector.JarFile")
-        } catch (e: Exception) {
-            LoggerProvider.logger.error("An exception was encountered while initializing the plugin.", e)
-            server.shutdown()
-        }
     }
 
     @Subscribe
     fun onInitialize(event: ProxyInitializeEvent) {
         try {
-            multiCoreAPI = pluginLoader.coreObject
+            multiCoreAPI = MultiCore(this)
             coreApi.load()
-            injector = pluginLoader.findClass("moe.caa.multilogin.velocity.injector.VelocityInjector").getConstructor()
-                .newInstance() as Injector
+            injector = VelocityInjector()
             injector.inject(coreApi)
             injector.registerChatSession(coreApi.mapperConfig.packetMapping)
         } catch (e: Throwable) {
@@ -116,7 +108,6 @@ class MultiLoginVelocity @Inject constructor(
     fun onDisable(event: ProxyShutdownEvent) {
         try {
             multiCoreAPI?.close()
-            pluginLoader.close()
         } catch (e: Exception) {
             LoggerProvider.logger.error("An exception was encountered while close the plugin", e)
         } finally {

@@ -7,10 +7,10 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.exceptions.CommandSyntaxException
 import moe.caa.multilogin.api.internal.command.CommandAPI
+import moe.caa.multilogin.api.internal.handle.OnlineProfileRef
 import moe.caa.multilogin.api.internal.logger.LoggerProvider
 import moe.caa.multilogin.api.internal.plugin.IPlayer
 import moe.caa.multilogin.api.internal.plugin.ISender
-import moe.caa.multilogin.api.profile.GameProfile
 import moe.caa.multilogin.core.command.commands.RootCommand
 import moe.caa.multilogin.core.main.MultiCore
 
@@ -104,7 +104,7 @@ class CommandHandler(core: MultiCore) : CommandAPI {
     }
 
     @Throws(CommandSyntaxException::class)
-    fun requireDataCacheArgumentSelf(context: CommandContext<ISender?>): Pair<GameProfile?, Int?> {
+    fun requireDataCacheArgumentSelf(context: CommandContext<ISender?>): OnlineProfileRef {
         requirePlayer(context)
         val currentCore = core
         val player = requireNotNull(context.source?.asPlayer)
@@ -113,7 +113,7 @@ class CommandHandler(core: MultiCore) : CommandAPI {
     }
 
     @Throws(CommandSyntaxException::class)
-    fun requireDataCacheArgumentOther(player: IPlayer): Pair<GameProfile?, Int?> =
+    fun requireDataCacheArgumentOther(player: IPlayer): OnlineProfileRef =
         core.playerHandler.getPlayerOnlineProfile(player.uniqueId)
             ?: throw builtInExceptions.cacheNotFoundOther().create(player.uniqueId, player.name)
 

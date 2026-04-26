@@ -1,6 +1,7 @@
 package moe.caa.multilogin.core.auth.service.yggdrasil
 
 import moe.caa.multilogin.api.profile.GameProfile
+import moe.caa.multilogin.core.auth.service.yggdrasil.serialize.GameProfileSerializer
 import moe.caa.multilogin.core.configuration.service.yggdrasil.BaseYggdrasilServiceConfig
 import moe.caa.multilogin.core.configuration.service.yggdrasil.BaseYggdrasilServiceConfig.HttpRequestMethod
 import moe.caa.multilogin.core.main.MultiCore
@@ -57,10 +58,7 @@ class YggdrasilAuthenticationFlows(
         val call = client.newCall(request)
         call.execute().use { execute ->
             val body = requireNotNull(execute.body) { "Yggdrasil response body is empty." }
-            return core.gson.fromJson(
-                body.string(),
-                GameProfile::class.java
-            )
+            return core.gson.decodeFromString(GameProfileSerializer, body.string())
         }
     }
 

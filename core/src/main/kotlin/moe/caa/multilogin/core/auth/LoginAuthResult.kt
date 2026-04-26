@@ -3,12 +3,11 @@ package moe.caa.multilogin.core.auth
 import moe.caa.multilogin.api.internal.auth.AuthResult
 import moe.caa.multilogin.api.profile.GameProfile
 import moe.caa.multilogin.core.auth.service.BaseServiceAuthenticationResult
-import moe.caa.multilogin.core.auth.service.yggdrasil.UnmodifiableGameProfile
 import moe.caa.multilogin.core.auth.service.yggdrasil.YggdrasilAuthenticationResult
 import moe.caa.multilogin.core.auth.validate.ValidateAuthenticationResult
 
 open class LoginAuthResult protected constructor(
-    override val response: UnmodifiableGameProfile?,
+    override val response: GameProfile?,
     override val kickMessage: String?,
     override val result: AuthResult.Result?,
     val baseServiceAuthenticationResult: BaseServiceAuthenticationResult?,
@@ -44,7 +43,8 @@ open class LoginAuthResult protected constructor(
             gameProfile: GameProfile
         ): LoginAuthResult {
             return LoginAuthResult(
-                UnmodifiableGameProfile.unmodifiable(gameProfile), null,
+                gameProfile.copy(),
+                null,
                 AuthResult.Result.ALLOW,
                 baseServiceAuthenticationResult, validateAuthenticationResult
             )

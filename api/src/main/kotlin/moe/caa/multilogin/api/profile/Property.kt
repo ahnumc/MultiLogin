@@ -1,10 +1,10 @@
 package moe.caa.multilogin.api.profile
 
-/**
- * 用户配置
- */
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Property(
-    var name: String? = null,
-    var value: String? = null,
-    var signature: String? = null
+    val name: String = "",
+    val value: String = "",
+    val signature: String? = null
 )

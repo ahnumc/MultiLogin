@@ -5,7 +5,6 @@ import moe.caa.multilogin.api.internal.auth.AuthResult
 import moe.caa.multilogin.api.internal.logger.LoggerProvider
 import moe.caa.multilogin.api.internal.skinrestorer.SkinRestorerAPI
 import moe.caa.multilogin.api.internal.util.ValueUtil.sha256
-import moe.caa.multilogin.api.profile.GameProfile
 import moe.caa.multilogin.api.profile.Property
 import moe.caa.multilogin.core.auth.LoginAuthResult
 import moe.caa.multilogin.core.configuration.SkinRestorerConfig.RestorerType
@@ -31,7 +30,7 @@ class SkinRestorerCore(private val core: MultiCore) : SkinRestorerAPI {
     @Throws(Exception::class)
     override fun doRestorer(result: AuthResult): SkinRestorerResultImpl {
         result as LoginAuthResult
-        val profile = result.response?.clone() as? GameProfile ?: error("Missing authenticated profile")
+        val profile = result.response?.copy() ?: error("Missing authenticated profile")
         val serviceConfig = requireNotNull(result.baseServiceAuthenticationResult?.serviceConfig)
         val restorerConfig = requireNotNull(serviceConfig.skinRestorer)
         val okHttpClient = OkHttpClient.Builder()
@@ -75,10 +74,11 @@ class SkinRestorerCore(private val core: MultiCore) : SkinRestorerAPI {
         val cacheTable = requireNotNull(core.sqlManager.skinRestoredCacheTable)
         val cacheRestored = cacheTable.getCacheRestored(sha256(url), model)
         if (cacheRestored != null) {
-            val restoredProperty = Property()
-            restoredProperty.name = "textures"
-            restoredProperty.value = cacheRestored.first ?: ""
-            restoredProperty.signature = cacheRestored.second
+            val restoredProperty = Property(
+                name = "textures",
+                value = cacheRestored.first ?: "",
+                signature = cacheRestored.second
+            )
             profile.propertyMap["textures"] = restoredProperty
             return SkinRestorerResultImpl.ofUseCache(profile)
         }

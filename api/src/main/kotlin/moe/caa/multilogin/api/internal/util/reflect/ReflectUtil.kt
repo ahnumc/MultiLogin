@@ -2,6 +2,8 @@ package moe.caa.multilogin.api.internal.util.reflect
 
 import org.jetbrains.annotations.ApiStatus
 import java.lang.reflect.*
+import java.util.function.Function
+import java.util.function.Predicate
 
 @ApiStatus.Internal
 object ReflectUtil {
@@ -14,40 +16,44 @@ object ReflectUtil {
     fun handleAccessible(field: Field): Field = field.also { it.isAccessible = true }
 
     @Throws(NoSuchFieldException::class)
-    fun findNoStaticField(target: Class<*>, fieldType: Type): Field {
+    fun findNoStaticField(target: Class<*>, fieldType: Class<*>): Field {
         val all = target.declaredFields.toList() + target.fields.toList()
         return all.firstOrNull { !Modifier.isStatic(it.modifiers) && it.type == fieldType }
             ?: throw NoSuchFieldException("Type: ${fieldType.typeName}")
     }
 
     @Throws(NoSuchMethodException::class)
-    fun findNoStaticMethodByParameters(target: Class<*>, vararg fieldTypes: Type?): Method =
+    fun findNoStaticMethodByParameters(target: Class<*>, vararg fieldTypes: Class<*>?): Method =
         target.declaredMethods.firstOrNull { !Modifier.isStatic(it.modifiers) && it.parameterTypes.contentEquals(fieldTypes) }
             ?: throw NoSuchMethodException("${target.name} Types: ${fieldTypes.contentToString()}")
 
     @Throws(NoSuchMethodException::class)
-    fun findStaticMethodByParameters(target: Class<*>, vararg fieldTypes: Type?): Method =
+    fun findStaticMethodByParameters(target: Class<*>, vararg fieldTypes: Class<*>?): Method =
         target.declaredMethods.firstOrNull { Modifier.isStatic(it.modifiers) && it.parameterTypes.contentEquals(fieldTypes) }
             ?: throw NoSuchMethodException("${target.name} Types: ${fieldTypes.contentToString()}")
 
     @Throws(NoSuchMethodException::class)
-    fun findStaticMethodByReturnTypeAndParameters(target: Class<*>, returnType: Type, vararg fieldTypes: Type?): Method =
+    fun findStaticMethodByReturnTypeAndParameters(
+        target: Class<*>,
+        returnType: Class<*>,
+        vararg fieldTypes: Class<*>?
+    ): Method =
         target.declaredMethods.firstOrNull {
             Modifier.isStatic(it.modifiers) && it.parameterTypes.contentEquals(fieldTypes) && returnType == it.returnType
         } ?: throw NoSuchMethodException("${target.name} Types: ${fieldTypes.contentToString()}")
 
     @Throws(NoSuchMethodException::class)
-    fun findNoStaticMethodByReturnType(target: Class<*>, returnType: Type?): Method =
+    fun findNoStaticMethodByReturnType(target: Class<*>, returnType: Class<*>?): Method =
         target.declaredMethods.firstOrNull { !Modifier.isStatic(it.modifiers) && it.returnType == returnType }
             ?: throw NoSuchMethodException("${target.name} Types: $returnType")
 
     @Throws(IllegalAccessException::class, NoSuchMethodException::class, InvocationTargetException::class, InstantiationException::class)
-    fun redirectRecordObject(source: Any, match: (Any?) -> Boolean, redirect: (Any?) -> Any?): Any {
+    fun redirectRecordObject(source: Any, match: Predicate<Any?>, redirect: Function<Any?, Any?>): Any {
         val fieldObjectMap = linkedMapOf<Field, Any?>()
         for (field in source.javaClass.declaredFields) {
             if (Modifier.isStatic(field.modifiers)) continue
             var value = handleAccessible(field).get(source)
-            if (match(value)) value = redirect(value)
+            if (match.test(value)) value = redirect.apply(value)
             fieldObjectMap[field] = value
         }
         val ctor = source.javaClass.getDeclaredConstructor(*fieldObjectMap.keys.map { it.type }.toTypedArray())

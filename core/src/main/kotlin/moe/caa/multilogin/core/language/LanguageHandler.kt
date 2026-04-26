@@ -17,7 +17,7 @@ class LanguageHandler(private val core: MultiCore) : LanguageAPI {
         reload()
     }
 
-    override fun getMessage(node: String?, vararg pairs: kotlin.Pair<String, Any?>): String {
+    override fun getMessage(node: String?, vararg pairs: Pair<String, Any?>): String {
         return transPapi(language.getProperty(node), *pairs)
     }
 

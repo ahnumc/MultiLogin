@@ -20,7 +20,7 @@ class FixedReturnParameterInvocationHandler(
 
     @Throws(InvocationTargetException::class, IllegalAccessException::class)
     override fun invoke(proxy: Any?, method: Method, args: Array<Any?>): Any? {
-        if (match(method)) return fixedFunc(handle, args)
+        if (match(method)) return fixedFunc.apply(handle, args)
         return method.invoke(handle, *args)
     }
 }

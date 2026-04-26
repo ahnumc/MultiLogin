@@ -50,7 +50,7 @@ class MLinkCommand(private val handler: CommandHandler) {
 
     @Throws(CommandSyntaxException::class)
     private fun executeLinkCode(context: CommandContext<ISender?>): Int {
-        val self = requireNotNull(handler.requireDataCacheArgumentSelf(context).first)
+        val self = requireNotNull(handler.requireDataCacheArgumentSelf(context).profile)
         val target = OnlinePlayerArgumentType.getPlayer(context, "player")
         val code = StringArgumentType.getString(context, "code")
         val sender = requireNotNull(context.source)
@@ -70,8 +70,8 @@ class MLinkCommand(private val handler: CommandHandler) {
         gameProfileEntryMap.remove(self)
 
         core.sqlManager.userDataTable.setInGameUUID(
-            requireNotNull(entry.requesterOnlineProfile.first?.id),
-            requireNotNull(entry.requesterOnlineProfile.second),
+            requireNotNull(entry.requesterOnlineProfile.profile?.id),
+            requireNotNull(entry.requesterOnlineProfile.serviceId),
             entry.receiverUserInGameUUID
         )
         sender.sendMessagePL(
@@ -114,7 +114,8 @@ class MLinkCommand(private val handler: CommandHandler) {
             return 0
         }
 
-        val targetServiceName = core.pluginConfig.serviceIdMap[entry.value.requesterOnlineProfile.second]?.serviceName
+        val targetServiceName =
+            core.pluginConfig.serviceIdMap[entry.value.requesterOnlineProfile.serviceId]?.serviceName
             ?: core.languageHandler.getMessage("command_message_info_unidentified_name")
 
         handler.submitConfirm(
@@ -122,7 +123,7 @@ class MLinkCommand(private val handler: CommandHandler) {
             "command_message_accept_desc",
             "command_message_accept_cq",
             "target_service_name" to targetServiceName,
-            "target_service_id" to entry.value.requesterOnlineProfile.second,
+            "target_service_id" to entry.value.requesterOnlineProfile.serviceId,
             "target_online_name" to entry.key.name,
             "target_online_uuid" to entry.key.id,
             "profile_name" to sourcePlayer.name,
@@ -157,11 +158,11 @@ class MLinkCommand(private val handler: CommandHandler) {
             "redirect_name" to target.name,
             "redirect_uuid" to target.uniqueId
         ) {
-            gameProfileEntryMap[requireNotNull(self.first)] = Entry(self, target.uniqueId)
+            gameProfileEntryMap[requireNotNull(self.profile)] = Entry(self, target.uniqueId)
             sender.sendMessagePL(
                 CommandHandler.core.languageHandler.getMessage(
                     "command_message_link",
-                    "self_online_name" to self.first?.name
+                    "self_online_name" to self.profile?.name
                 )
             )
         }
@@ -169,7 +170,7 @@ class MLinkCommand(private val handler: CommandHandler) {
     }
 
     class Entry(
-        val requesterOnlineProfile: Pair<GameProfile?, Int?>,
+        val requesterOnlineProfile: moe.caa.multilogin.api.internal.handle.OnlineProfileRef,
         val receiverUserInGameUUID: UUID
     ) {
         val timeMills = System.currentTimeMillis()

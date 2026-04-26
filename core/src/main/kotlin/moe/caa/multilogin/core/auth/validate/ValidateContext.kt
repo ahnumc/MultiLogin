@@ -8,7 +8,7 @@ import moe.caa.multilogin.core.auth.service.BaseServiceAuthenticationResult
  */
 class ValidateContext(val baseServiceAuthenticationResult: BaseServiceAuthenticationResult) {
     var inGameProfile: GameProfile =
-        (requireNotNull(baseServiceAuthenticationResult.response).clone() as GameProfile)
+        requireNotNull(baseServiceAuthenticationResult.response).copy()
         private set
     var disallowMessage: String = ""
         private set

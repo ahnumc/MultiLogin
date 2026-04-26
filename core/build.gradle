@@ -1,6 +1,6 @@
 plugins {
-    id 'com.gradleup.shadow' version '9.1.0'
     id 'org.jetbrains.kotlin.jvm'
+    id 'org.jetbrains.kotlin.plugin.serialization'
 }
 
 
@@ -14,18 +14,12 @@ dependencies {
     compileOnly project(":flows")
     compileOnly 'org.geysermc.floodgate:api:2.2.2-SNAPSHOT'
     compileOnly 'org.geysermc.geyser:api:2.2.0-SNAPSHOT'
-}
-
-shadowJar {
-    archiveFileName = 'MultiLogin-Core.JarFile'
+    compileOnly 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3'
 }
 
 java {
 }
 
-artifacts {
-    archives shadowJar
-}
 kotlin {
     jvmToolchain(21)
 }

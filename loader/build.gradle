@@ -11,9 +11,6 @@ dependencies {
     compileOnly project(":flows")
     compileOnly project(":api")
 
-    // 通过编译的，不作为插件依赖
-    compileOnly 'org.ow2.asm:asm:9.3'
-    compileOnly 'org.ow2.asm:asm-commons:9.3'
 }
 
 

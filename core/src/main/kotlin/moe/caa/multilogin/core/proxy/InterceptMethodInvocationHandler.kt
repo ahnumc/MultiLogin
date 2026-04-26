@@ -6,8 +6,8 @@ import java.lang.reflect.Modifier
 
 class InterceptMethodInvocationHandler(
     private val handle: Any,
-    private val match: (Method?) -> Boolean,
-    private val redirect: (Method?, Array<Any?>?) -> Any?
+    private val match: (Method) -> Boolean,
+    private val redirect: (Method, Array<Any?>) -> Any?
 ) : InvocationHandler {
 
     init {

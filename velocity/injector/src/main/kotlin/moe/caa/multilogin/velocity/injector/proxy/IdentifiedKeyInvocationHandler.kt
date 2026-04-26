@@ -6,7 +6,7 @@ import java.lang.reflect.Method
 /**
  * IdentifiedKey 代理，始终让签名数据有效
  */
-class IdentifiedKeyInvocationHandler(private val obj: Any?) : InvocationHandler {
+class IdentifiedKeyInvocationHandler(private val obj: Any) : InvocationHandler {
     @Throws(Throwable::class)
     override fun invoke(proxy: Any?, method: Method, args: Array<Any?>): Any? {
         if (method.getName() == "hasExpired") {

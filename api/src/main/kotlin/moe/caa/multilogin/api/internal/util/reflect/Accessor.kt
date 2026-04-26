@@ -5,6 +5,7 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 import java.lang.reflect.Type
+import java.util.function.Predicate
 
 @ApiStatus.Internal
 class Accessor(val classHandle: Class<*>) {
@@ -13,21 +14,30 @@ class Accessor(val classHandle: Class<*>) {
     private fun constructors(declared: Boolean) = if (declared) classHandle.declaredConstructors else classHandle.constructors
     private fun ctx(declared: Boolean) = "${classHandle.name}(dedicated = $declared)"
 
-    fun findAllMethods(declared: Boolean, predicate: (Method) -> Boolean): List<Method> = methods(declared).filter(predicate)
-    fun findAllFields(declared: Boolean, predicate: (Field) -> Boolean): List<Field> = fields(declared).filter(predicate)
-    fun findAllConstructors(declared: Boolean, predicate: (Constructor<*>) -> Boolean): List<Constructor<*>> = constructors(declared).filter(predicate)
+    fun findAllMethods(declared: Boolean, predicate: Predicate<Method>): List<Method> =
+        methods(declared).filter(predicate::test)
+
+    fun findAllFields(declared: Boolean, predicate: Predicate<Field>): List<Field> =
+        fields(declared).filter(predicate::test)
+
+    fun findAllConstructors(declared: Boolean, predicate: Predicate<Constructor<*>>): List<Constructor<*>> =
+        constructors(declared).filter(predicate::test)
 
     @Throws(NoSuchMethodException::class)
-    fun findFirstMethod(declared: Boolean, predicate: (Method) -> Boolean, exceptionMessage: String?): Method =
-        methods(declared).firstOrNull(predicate) ?: throw NoSuchMethodException(exceptionMessage)
+    fun findFirstMethod(declared: Boolean, predicate: Predicate<Method>, exceptionMessage: String?): Method =
+        methods(declared).firstOrNull(predicate::test) ?: throw NoSuchMethodException(exceptionMessage)
 
     @Throws(NoSuchFieldException::class)
-    fun findFirstField(declared: Boolean, predicate: (Field) -> Boolean, exceptionMessage: String?): Field =
-        fields(declared).firstOrNull(predicate) ?: throw NoSuchFieldException(exceptionMessage)
+    fun findFirstField(declared: Boolean, predicate: Predicate<Field>, exceptionMessage: String?): Field =
+        fields(declared).firstOrNull(predicate::test) ?: throw NoSuchFieldException(exceptionMessage)
 
     @Throws(NoSuchConstructorException::class)
-    fun findFirstConstructors(declared: Boolean, predicate: (Constructor<*>) -> Boolean, exceptionMessage: String?): Constructor<*> =
-        constructors(declared).firstOrNull(predicate) ?: throw NoSuchConstructorException(exceptionMessage)
+    fun findFirstConstructors(
+        declared: Boolean,
+        predicate: Predicate<Constructor<*>>,
+        exceptionMessage: String?
+    ): Constructor<*> =
+        constructors(declared).firstOrNull(predicate::test) ?: throw NoSuchConstructorException(exceptionMessage)
 
     @Throws(NoSuchMethodException::class)
     fun findFirstMethodByName(declared: Boolean, name: String?): Method =
