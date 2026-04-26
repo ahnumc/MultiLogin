@@ -1,6 +1,5 @@
 package moe.caa.multilogin.core.configuration
 
-import moe.caa.multilogin.api.internal.util.ValueUtil.isEmpty
 import okhttp3.Authenticator
 import okhttp3.Credentials.basic
 import okhttp3.Response
@@ -22,18 +21,18 @@ class ProxyConfig(
 ) {
     val proxy: Proxy
         get() {
-            val proxyType = requireNotNull(type)
+            val proxyType = type ?: return Proxy.NO_PROXY
             if (proxyType == Proxy.Type.DIRECT) return Proxy.NO_PROXY
-            return Proxy(proxyType, InetSocketAddress(requireNotNull(hostname), port))
+            return Proxy(proxyType, InetSocketAddress(hostname.orEmpty(), port))
         }
 
     val proxyAuthenticator: Authenticator
         get() = Authenticator { _: Route?, response: Response? ->
-            val authUsername = username?.takeUnless { isEmpty(it) } ?: return@Authenticator null
-            val credential = basic(authUsername, requireNotNull(password))
-            requireNotNull(response).request.newBuilder()
-                .header("Proxy-Authorization", credential)
-                .build()
+            val authUsername = username?.takeUnless(String::isBlank) ?: return@Authenticator null
+            val credential = basic(authUsername, password.orEmpty())
+            response?.request?.newBuilder()?.let {
+                it.header("Proxy-Authorization", credential).build()
+            }
         }
 
     companion object {

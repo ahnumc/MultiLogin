@@ -1,6 +1,5 @@
 package moe.caa.multilogin.core.configuration.service.yggdrasil
 
-import moe.caa.multilogin.api.internal.util.ValueUtil.isEmpty
 import moe.caa.multilogin.api.internal.util.ValueUtil.transPapi
 import moe.caa.multilogin.core.configuration.ProxyConfig
 import moe.caa.multilogin.core.configuration.SkinRestorerConfig
@@ -50,11 +49,11 @@ abstract class BaseYggdrasilServiceConfig protected constructor(
         if (!trackIp) {
             return ""
         }
-        if (isEmpty(ip)) {
+        if (ip.isNullOrEmpty()) {
             return ""
         }
         val trackIpContent = this.authTrackIpContent
-        if (isEmpty(trackIpContent)) {
+        if (trackIpContent.isEmpty()) {
             return ""
         }
         return transPapi(

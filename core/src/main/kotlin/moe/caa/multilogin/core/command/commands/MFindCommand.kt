@@ -77,14 +77,14 @@ class MFindCommand(private val handler: CommandHandler) {
         val delimiter = core.languageHandler.getMessage("command_message_find_profile_entry_delimiter")
         val listStr = onlineProfiles.joinToString(delimiter ?: "") { raw ->
             val p = requireNotNull(raw)
-            val serviceName = core.pluginConfig.serviceIdMap[p.value3]?.serviceName
+            val serviceName = core.pluginConfig.serviceIdMap[p.third]?.serviceName
                 ?: core.languageHandler.getMessage("command_message_find_profile_entry_unused_service")
             core.languageHandler.getMessage(
                 "command_message_find_profile_entry",
                 "service_name" to serviceName,
-                "service_id" to p.value3,
-                "online_uuid" to p.value1,
-                "online_name" to (p.value2
+                "service_id" to p.third,
+                "online_uuid" to p.first,
+                "online_name" to (p.second
                     ?: core.languageHandler.getMessage("command_message_find_profile_entry_onlineunnamed"))
             )
         }

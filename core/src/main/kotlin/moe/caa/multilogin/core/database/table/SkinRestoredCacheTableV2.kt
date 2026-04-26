@@ -36,7 +36,7 @@ class SkinRestoredCacheTableV2(private val sqlManager: SQLManager, private val t
         pool.query(
             "SELECT $fieldRestorerValue, $fieldRestorerSignature FROM $tableName WHERE $fieldCurrentSkinUrlSha256 = ? AND $fieldCurrentSkinModel = ? LIMIT 1",
             { setBytes(1, urlSha256); setString(2, model) }
-        ) { Pair(getString(1), getString(2)) }
+        ) { getString(1) to getString(2) }
 
     /**
      * 插入新的缓存对象

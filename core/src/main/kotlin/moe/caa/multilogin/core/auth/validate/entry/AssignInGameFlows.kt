@@ -1,7 +1,6 @@
 package moe.caa.multilogin.core.auth.validate.entry
 
 import moe.caa.multilogin.api.internal.logger.LoggerProvider
-import moe.caa.multilogin.api.internal.util.ValueUtil.isEmpty
 import moe.caa.multilogin.core.auth.validate.ValidateContext
 import moe.caa.multilogin.core.main.MultiCore
 import moe.caa.multilogin.flows.workflows.BaseFlows
@@ -35,13 +34,13 @@ class AssignInGameFlows(private val core: MultiCore) : BaseFlows<ValidateContext
         val resolvedInGameUUID = requireNotNull(inGameUUID)
         if (core.pluginConfig.autoNameChange && ctx.onlineNameUpdated) {
             val username = core.sqlManager.inGameProfileTable.getUsername(resolvedInGameUUID)
-            username?.takeUnless(::isEmpty)?.let { core.sqlManager.inGameProfileTable.eraseUsername(it) }
+            username?.takeUnless(String::isEmpty)?.let { core.sqlManager.inGameProfileTable.eraseUsername(it) }
         }
 
         val exist = core.sqlManager.inGameProfileTable.dataExists(resolvedInGameUUID)
         if (exist) {
             val username = core.sqlManager.inGameProfileTable.getUsername(resolvedInGameUUID)
-            if (!isEmpty(username)) {
+            if (!username.isNullOrEmpty()) {
                 ctx.inGameProfile.id = resolvedInGameUUID
                 ctx.inGameProfile.name = username
                 return Signal.PASSED

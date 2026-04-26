@@ -3,7 +3,6 @@ package moe.caa.multilogin.core.main
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import moe.caa.multilogin.api.internal.logger.LoggerProvider
-import moe.caa.multilogin.api.internal.util.ValueUtil.isEmpty
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader
 import java.io.*
 import java.net.URL
@@ -201,7 +200,7 @@ class MetricsLite(//插件
             val bytes = ByteArray(inputStream.available())
             inputStream.read(bytes)
             val s = String(bytes)
-            if (!isEmpty(s)) {
+            if (s.isNotEmpty()) {
                 LoggerProvider.logger.debug("bStats receive: " + s)
             }
         }

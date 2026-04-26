@@ -1,7 +1,6 @@
 package moe.caa.multilogin.core.database.table
 
 import moe.caa.multilogin.api.internal.logger.LoggerProvider
-import moe.caa.multilogin.api.internal.util.Three
 import moe.caa.multilogin.api.internal.util.ValueUtil.bytesToUuid
 import moe.caa.multilogin.api.internal.util.ValueUtil.uuidToBytes
 import moe.caa.multilogin.core.command.CommandHandler
@@ -80,11 +79,11 @@ class UserDataTableV3(
     }
 
     @Throws(SQLException::class)
-    fun get(onlineUUID: UUID, serviceId: Int): Three<String?, UUID?, Boolean?>? =
+    fun get(onlineUUID: UUID, serviceId: Int): Triple<String?, UUID?, Boolean?>? =
         pool.query(
             "SELECT $fieldOnlineName, $fieldInGameProfileUuid, $fieldWhitelist FROM $tableName WHERE $fieldOnlineUUID = ? AND $fieldServiceId = ? LIMIT 1",
             { setBytes(1, uuidToBytes(onlineUUID)); setInt(2, serviceId) }
-        ) { Three(getString(1), getBytes(2)?.let { bytesToUuid(it) }, getBoolean(3)) }
+        ) { Triple(getString(1), getBytes(2)?.let { bytesToUuid(it) }, getBoolean(3)) }
 
     @Throws(SQLException::class)
     fun getOnlineUUID(username: String, serviceId: Int): UUID? =
@@ -117,11 +116,11 @@ class UserDataTableV3(
      * 返回档案集合
      */
     @Throws(SQLException::class)
-    fun getOnlineProfiles(inGameUUID: UUID): Set<Three<UUID?, String?, Int?>?> =
+    fun getOnlineProfiles(inGameUUID: UUID): Set<Triple<UUID?, String?, Int?>?> =
         pool.queryAll(
             "SELECT $fieldOnlineUUID, $fieldOnlineName, $fieldServiceId FROM $tableName WHERE $fieldInGameProfileUuid = ?",
             { setBytes(1, uuidToBytes(inGameUUID)) }
-        ) { Three<UUID?, String?, Int?>(getBytes(1)?.let { bytesToUuid(it) }, getString(2), getInt(3)) }.toSet()
+        ) { Triple(getBytes(1)?.let { bytesToUuid(it) }, getString(2), getInt(3)) }.toSet()
 
     /**
      * 设置游戏内 UUID

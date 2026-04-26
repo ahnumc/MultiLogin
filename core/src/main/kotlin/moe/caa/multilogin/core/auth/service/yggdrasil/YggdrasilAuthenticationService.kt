@@ -69,8 +69,8 @@ class YggdrasilAuthenticationService(private val core: MultiCore) {
         if (run == Signal.PASSED) {
             val response = requireNotNull(context.response.get())
             return YggdrasilAuthenticationResult.ofAllowed(
-                response.value1,
-                response.value2
+                response.first,
+                response.second
             )
         }
         if (context.serviceUnavailable.isNotEmpty()) {

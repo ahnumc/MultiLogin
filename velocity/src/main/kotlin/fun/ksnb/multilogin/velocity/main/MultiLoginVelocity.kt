@@ -39,6 +39,8 @@ class MultiLoginVelocity @Inject constructor(
     private val pluginLoader: PluginLoader
     var multiCoreAPI: MultiCoreAPI? = null
     private lateinit var injector: Injector
+    private val coreApi: MultiCoreAPI
+        get() = requireNotNull(multiCoreAPI)
 
     init {
         instance = this
@@ -58,7 +60,6 @@ class MultiLoginVelocity @Inject constructor(
     fun onInitialize(event: ProxyInitializeEvent) {
         try {
             multiCoreAPI = pluginLoader.coreObject
-            val coreApi = requireNotNull(multiCoreAPI)
             coreApi.load()
             injector = pluginLoader.findClass("moe.caa.multilogin.velocity.injector.VelocityInjector").getConstructor()
                 .newInstance() as Injector
@@ -98,7 +99,6 @@ class MultiLoginVelocity @Inject constructor(
             this, NewChatSessionPacketIDEvent::class.java,
             AwaitingEventExecutor { packetEvent: NewChatSessionPacketIDEvent ->
                 EventTask.withContinuation { continuation ->
-                    val coreApi = requireNotNull(multiCoreAPI)
                     runServer.playerManager.kickPlayerIfOnline(
                         packetEvent.player.uniqueId,
                         coreApi.languageHandler.getMessage("reconnect_msg")

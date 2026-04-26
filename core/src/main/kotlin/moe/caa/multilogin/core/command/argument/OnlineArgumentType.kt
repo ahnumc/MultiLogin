@@ -59,7 +59,7 @@ class OnlineArgumentType : ArgumentType<OnlineArgumentType.OnlineArgument> {
                 ), reader
             )
         }
-        return OnlineArgument(serviceConfig, uuid, there.value1, there.value2, there.value3)
+        return OnlineArgument(serviceConfig, uuid, there.first, there.second, there.third)
     }
 
     override fun <S> listSuggestions(

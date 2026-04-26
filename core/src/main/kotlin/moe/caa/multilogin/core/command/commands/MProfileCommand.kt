@@ -4,7 +4,6 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
 import moe.caa.multilogin.api.internal.plugin.IPlayer
 import moe.caa.multilogin.api.internal.plugin.ISender
-import moe.caa.multilogin.api.internal.util.ValueUtil.isEmpty
 import moe.caa.multilogin.core.command.CommandHandler
 import moe.caa.multilogin.core.command.Permissions
 import moe.caa.multilogin.core.command.argument.OnlineArgumentType
@@ -111,7 +110,7 @@ class MProfileCommand(private val handler: CommandHandler) {
         val profile = ProfileArgumentType.getProfile(context, "profile")
         val pair = handler.requireDataCacheArgumentSelf(context)
 
-        processSet(context, pair.value1?.id, pair.value1?.name, requireNotNull(pair.value2), profile)
+        processSet(context, pair.first?.id, pair.first?.name, requireNotNull(pair.second), profile)
         return 0
     }
 
@@ -164,7 +163,7 @@ class MProfileCommand(private val handler: CommandHandler) {
         val core = CommandHandler.core
         val sender = requireNotNull(context.source)
         val nameAllowedRegular = core.pluginConfig.nameAllowedRegular
-        if (!isEmpty(nameAllowedRegular)) {
+        if (!nameAllowedRegular.isNullOrEmpty()) {
             if (!Pattern.matches(nameAllowedRegular, name)) {
                 sender.sendMessagePL(
                     core.languageHandler.getMessage(
@@ -190,7 +189,7 @@ class MProfileCommand(private val handler: CommandHandler) {
                 core.languageHandler.getMessage(
                     "command_message_profile_create_uuidoccupied",
                     "uuid" to uuid,
-                    "name" to (pair.value2 ?: "")
+                    "name" to (pair.second ?: "")
                 )
             )
             return

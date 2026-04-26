@@ -1,7 +1,5 @@
 package moe.caa.multilogin.core.semver
 
-import moe.caa.multilogin.api.internal.util.ValueUtil.isEmpty
-
 /**
  * 语义化版本号处理工具
  */
@@ -39,7 +37,7 @@ class SemVersion private constructor(
 
     companion object {
         fun of(version: String): SemVersion? {
-            if (isEmpty(version)) return null
+            if (version.isEmpty()) return null
             if (version.lowercase().startsWith("build_")) return null
             val split = version.split("-")
             val mmp = split[0].split(".")

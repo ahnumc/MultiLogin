@@ -8,13 +8,16 @@ import `fun`.ksnb.multilogin.velocity.impl.VelocitySender
  * Velocity 的指令处理程序
  */
 class CommandHandler(private val multiLoginVelocity: MultiLoginVelocity) {
+    private val coreApi: moe.caa.multilogin.api.internal.main.MultiCoreAPI
+        get() = requireNotNull(multiLoginVelocity.multiCoreAPI)
+
     private val simpleCommand: SimpleCommand = object : SimpleCommand {
         override fun execute(invocation: SimpleCommand.Invocation) {
             val arguments = invocation.arguments()
             val ns = Array(arguments.size + 1) { "" }
             System.arraycopy(arguments, 0, ns, 1, arguments.size)
             ns[0] = invocation.alias()
-            requireNotNull(multiLoginVelocity.multiCoreAPI).commandHandler.execute(VelocitySender(invocation.source()), ns)
+            coreApi.commandHandler.execute(VelocitySender(invocation.source()), ns)
         }
 
         override fun suggest(invocation: SimpleCommand.Invocation): MutableList<String> {
@@ -22,7 +25,7 @@ class CommandHandler(private val multiLoginVelocity: MultiLoginVelocity) {
             val ns = Array(arguments.size + 1) { "" }
             System.arraycopy(arguments, 0, ns, 1, arguments.size)
             ns[0] = invocation.alias()
-            return requireNotNull(multiLoginVelocity.multiCoreAPI).commandHandler.tabComplete(
+            return coreApi.commandHandler.tabComplete(
                 VelocitySender(invocation.source()),
                 ns
             )

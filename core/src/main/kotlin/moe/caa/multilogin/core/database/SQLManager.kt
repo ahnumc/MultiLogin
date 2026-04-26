@@ -1,6 +1,5 @@
 package moe.caa.multilogin.core.database
 
-import moe.caa.multilogin.api.internal.util.ValueUtil.isEmpty
 import moe.caa.multilogin.core.configuration.SqlConfig.SqlBackend
 import moe.caa.multilogin.core.database.pool.H2ConnectionPool
 import moe.caa.multilogin.core.database.pool.ISQLConnectionPool
@@ -35,11 +34,11 @@ class SQLManager(val core: MultiCore) {
             SqlBackend.MYSQL -> MysqlConnectionPool(
                 requireNotNull(sqlConfig.ip), sqlConfig.port, requireNotNull(sqlConfig.database),
                 requireNotNull(sqlConfig.username), requireNotNull(sqlConfig.password),
-                if (isEmpty(sqlConfig.connectUrl)) MysqlConnectionPool.defaultUrl else requireNotNull(sqlConfig.connectUrl)
+                sqlConfig.connectUrl?.takeUnless(String::isBlank) ?: MysqlConnectionPool.defaultUrl
             )
             SqlBackend.H2 -> H2ConnectionPool(
                 core.plugin.dataFolder, requireNotNull(sqlConfig.username), requireNotNull(sqlConfig.password),
-                if (isEmpty(sqlConfig.connectUrl)) H2ConnectionPool.defaultUrl else requireNotNull(sqlConfig.connectUrl)
+                sqlConfig.connectUrl?.takeUnless(String::isBlank) ?: H2ConnectionPool.defaultUrl
             )
             else -> throw UnsupportedOperationException("Database type Unknown.")
         }

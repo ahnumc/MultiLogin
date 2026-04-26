@@ -55,7 +55,7 @@ class RootCommand(private val handler: CommandHandler) {
 
         val identifiedPlayerMap = mutableMapOf<Int, MutableList<moe.caa.multilogin.api.internal.plugin.IPlayer>>()
         for (player in onlinePlayers) {
-            val sid = core.playerHandler.getPlayerOnlineProfile(player.uniqueId)?.value2 ?: -1
+            val sid = core.playerHandler.getPlayerOnlineProfile(player.uniqueId)?.second ?: -1
             identifiedPlayerMap.getOrPut(sid) { mutableListOf() }.add(player)
         }
         core.pluginConfig.serviceIdMap.keys.filterNotNull().forEach { key ->

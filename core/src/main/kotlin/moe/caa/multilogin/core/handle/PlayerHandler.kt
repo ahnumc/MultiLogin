@@ -64,10 +64,10 @@ class PlayerHandler(private val core: MultiCore) : HandlerAPI {
             } else {
                 core.languageHandler.getMessage(
                     "welcome_msg",
-                    "online_name" to pair.value1?.name,
-                    "online_uuid" to pair.value1?.id,
-                    "service_name" to pair.value2?.serviceName,
-                    "service_id" to pair.value2?.serviceId,
+                    "online_name" to pair.first?.name,
+                    "online_uuid" to pair.first?.id,
+                    "service_name" to pair.second?.serviceName,
+                    "service_id" to pair.second?.serviceId,
                     "profile_name" to player.name,
                     "profile_uuid" to player.uniqueId
                 )
@@ -80,12 +80,12 @@ class PlayerHandler(private val core: MultiCore) : HandlerAPI {
 
     override fun getPlayerOnlineProfile(inGameUUID: UUID?): Pair<GameProfile?, Int?>? {
         val entry = cache[inGameUUID] ?: return null
-        return Pair(entry.onlineProfileData, entry.serviceConfig?.serviceId)
+        return entry.onlineProfileData to entry.serviceConfig?.serviceId
     }
 
     fun getPlayerOnlineProfile0(inGameUUID: UUID?): Pair<GameProfile?, BaseServiceConfig?>? {
         val entry = cache[inGameUUID] ?: return null
-        return Pair(entry.onlineProfileData, entry.serviceConfig)
+        return entry.onlineProfileData to entry.serviceConfig
     }
 
     override fun getInGameUUID(onlineUUID: UUID?, serviceId: Int): UUID? =

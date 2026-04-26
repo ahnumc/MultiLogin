@@ -77,8 +77,8 @@ class SkinRestorerCore(private val core: MultiCore) : SkinRestorerAPI {
         if (cacheRestored != null) {
             val restoredProperty = Property()
             restoredProperty.name = "textures"
-            restoredProperty.value = cacheRestored.value1 ?: ""
-            restoredProperty.signature = cacheRestored.value2
+            restoredProperty.value = cacheRestored.first ?: ""
+            restoredProperty.signature = cacheRestored.second
             profile.propertyMap["textures"] = restoredProperty
             return SkinRestorerResultImpl.ofUseCache(profile)
         }

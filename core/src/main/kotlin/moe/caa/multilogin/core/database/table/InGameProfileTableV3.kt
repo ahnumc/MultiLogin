@@ -54,14 +54,14 @@ class InGameProfileTableV3(
         val oldData = mutableListOf<Pair<ByteArray?, String?>>()
         connection.prepareStatement("SELECT in_game_uuid, current_username FROM $tableNameV2").use { stmt ->
             stmt.executeQuery().use { rs ->
-                while (rs.next()) oldData.add(Pair(rs.getBytes(1), rs.getString(2)))
+                while (rs.next()) oldData.add(rs.getBytes(1) to rs.getString(2))
             }
         }
         val insertSql = "INSERT INTO $tableName ($fieldInGameUuid, $fieldCurrentUsernameLowerCase) VALUES (?, ?)"
         for (datum in oldData) {
             connection.prepareStatement(insertSql).use { stmt ->
-                stmt.setBytes(1, datum.value1)
-                stmt.setString(2, datum.value2?.lowercase())
+                stmt.setBytes(1, datum.first)
+                stmt.setString(2, datum.second?.lowercase())
                 stmt.executeUpdate()
             }
         }
@@ -73,7 +73,7 @@ class InGameProfileTableV3(
         pool.query(
             "SELECT $fieldCurrentUsernameOriginal FROM $tableName WHERE $fieldInGameUuid = ? LIMIT 1",
             { setBytes(1, uuidToBytes(inGameUUID)) }
-        ) { Pair(inGameUUID, getString(1)) }
+        ) { inGameUUID to getString(1) }
 
     /**
      * 获得游戏内 UUID

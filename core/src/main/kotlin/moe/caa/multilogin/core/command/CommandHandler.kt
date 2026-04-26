@@ -98,7 +98,7 @@ class CommandHandler(core: MultiCore) : CommandAPI {
         if (!sender.isPlayer) {
             throw builtInExceptions.requirePlayer().create()
         }
-        if (requireNotNull(sender.asPlayer).uniqueId == player.uniqueId) {
+        if (sender.asPlayer?.uniqueId == player.uniqueId) {
             throw builtInExceptions.noSelf().create()
         }
     }
@@ -107,7 +107,7 @@ class CommandHandler(core: MultiCore) : CommandAPI {
     fun requireDataCacheArgumentSelf(context: CommandContext<ISender?>): Pair<GameProfile?, Int?> {
         requirePlayer(context)
         val currentCore = core
-        val player = requireNotNull(requireNotNull(context.source).asPlayer)
+        val player = requireNotNull(context.source?.asPlayer)
         return currentCore.playerHandler.getPlayerOnlineProfile(player.uniqueId)
             ?: throw builtInExceptions.cacheNotFoundSelf().create()
     }

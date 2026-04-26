@@ -3,7 +3,6 @@ package moe.caa.multilogin.core.command.commands
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
 import moe.caa.multilogin.api.internal.plugin.ISender
-import moe.caa.multilogin.api.internal.util.ValueUtil.isEmpty
 import moe.caa.multilogin.core.command.CommandHandler
 import moe.caa.multilogin.core.command.Permissions
 import moe.caa.multilogin.core.command.argument.ProfileArgumentType
@@ -60,7 +59,7 @@ class MRenameCommand(private val handler: CommandHandler) {
             return
         }
         val nameAllowedRegular = core.pluginConfig.nameAllowedRegular
-        if (!isEmpty(nameAllowedRegular)) {
+        if (!nameAllowedRegular.isNullOrEmpty()) {
             if (!Pattern.matches(nameAllowedRegular, newName)) {
                 sender.sendMessagePL(
                     core.languageHandler.getMessage(

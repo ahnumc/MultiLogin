@@ -1,6 +1,5 @@
 package moe.caa.multilogin.core.auth.validate.entry
 
-import moe.caa.multilogin.api.internal.util.ValueUtil.isEmpty
 import moe.caa.multilogin.core.auth.validate.ValidateContext
 import moe.caa.multilogin.core.main.MultiCore
 import moe.caa.multilogin.flows.workflows.BaseFlows
@@ -14,7 +13,7 @@ class NameAllowedRegularCheckFlows(private val core: MultiCore) : BaseFlows<Vali
     override fun run(context: ValidateContext?): Signal {
         val ctx = requireNotNull(context)
         val nameAllowedRegular = core.pluginConfig.nameAllowedRegular
-        if (isEmpty(nameAllowedRegular)) return Signal.PASSED
+        if (nameAllowedRegular.isNullOrEmpty()) return Signal.PASSED
         val name = requireNotNull(ctx.baseServiceAuthenticationResult.response).name
         if (!Pattern.matches(nameAllowedRegular, name)) {
             ctx.setDisallowMessage(
