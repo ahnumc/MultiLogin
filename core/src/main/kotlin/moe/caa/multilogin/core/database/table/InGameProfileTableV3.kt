@@ -14,11 +14,11 @@ import java.util.*
 
 class InGameProfileTableV3(
     private val sqlManager: SQLManager,
-    private val tableName: String?,
-    private val tableNameV2: String?
+    private val tableName: String,
+    private val tableNameV2: String
 ) {
     private val pool
-        get() = requireNotNull(sqlManager.pool)
+        get() = sqlManager.pool
 
     @Throws(SQLException::class)
     fun init(connection: Connection) {

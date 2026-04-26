@@ -58,7 +58,7 @@ class RootCommand(private val handler: CommandHandler) {
             val sid = core.playerHandler.getPlayerOnlineProfile(player.uniqueId)?.serviceId ?: -1
             identifiedPlayerMap.getOrPut(sid) { mutableListOf() }.add(player)
         }
-        core.pluginConfig.serviceIdMap.keys.filterNotNull().forEach { key ->
+        core.pluginConfig.serviceIdMap.keys.forEach { key ->
             identifiedPlayerMap.getOrPut(key) { mutableListOf() }
         }
 

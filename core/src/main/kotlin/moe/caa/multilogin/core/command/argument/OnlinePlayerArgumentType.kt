@@ -61,13 +61,13 @@ class OnlinePlayerArgumentType : ArgumentType<MutableSet<IPlayer>> {
     companion object {
         fun players(): OnlinePlayerArgumentType = OnlinePlayerArgumentType()
 
-        fun getPlayers(context: CommandContext<*>, name: String?): MutableSet<IPlayer> {
+        fun getPlayers(context: CommandContext<*>, name: String): MutableSet<IPlayer> {
             @Suppress("UNCHECKED_CAST")
             return context.getArgument(name, MutableSet::class.java) as MutableSet<IPlayer>
         }
 
         @Throws(CommandSyntaxException::class)
-        fun getPlayer(context: CommandContext<*>, name: String?): IPlayer =
+        fun getPlayer(context: CommandContext<*>, name: String): IPlayer =
             getPlayers(context, name).singleOrNull()
                 ?: throw UniversalCommandExceptionType.create(
                     CommandHandler.core.languageHandler.getMessage("command_message_player_multi_target")

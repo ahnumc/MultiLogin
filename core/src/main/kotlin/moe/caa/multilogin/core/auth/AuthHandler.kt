@@ -15,79 +15,69 @@ class AuthHandler(private val core: MultiCore) : AuthAPI {
     val validateAuthenticationService: ValidateAuthenticationService = ValidateAuthenticationService(core)
 
     override fun auth(username: String, serverId: String, ip: String): LoginAuthResult {
-        val yggdrasilAuthenticationResult: YggdrasilAuthenticationResult
         try {
-            yggdrasilAuthenticationResult = yggdrasilAuthenticationService.hasJoined(username, serverId, ip)
-            if (yggdrasilAuthenticationResult.reason == YggdrasilAuthenticationResult.Reason.NO_SERVICE) {
-                return LoginAuthResult.ofDisallowedByYggdrasilAuthenticator(
-                    yggdrasilAuthenticationResult,
-                    core.languageHandler.getMessage("auth_failed_no_yggdrasil_service")
-                )
-            }
-            if (yggdrasilAuthenticationResult.reason == YggdrasilAuthenticationResult.Reason.SERVER_BREAKDOWN) {
-                return LoginAuthResult.ofDisallowedByYggdrasilAuthenticator(
-                    yggdrasilAuthenticationResult,
-                    core.languageHandler.getMessage("auth_yggdrasil_failed_server_down")
-                )
-            }
-            if (yggdrasilAuthenticationResult.reason == YggdrasilAuthenticationResult.Reason.VALIDATION_FAILED) {
-                return LoginAuthResult.ofDisallowedByYggdrasilAuthenticator(
-                    yggdrasilAuthenticationResult,
-                    core.languageHandler.getMessage("auth_yggdrasil_failed_validation_failed")
-                )
-            }
-            if (yggdrasilAuthenticationResult.reason != YggdrasilAuthenticationResult.Reason.ALLOWED
-                || yggdrasilAuthenticationResult.response == null
-                || yggdrasilAuthenticationResult.serviceConfig?.serviceId == -1
-            ) {
-                return LoginAuthResult.ofDisallowedByYggdrasilAuthenticator(
-                    yggdrasilAuthenticationResult,
-                    core.languageHandler.getMessage("auth_yggdrasil_failed_unknown")
-                )
+            val yggdrasilAuthenticationResult = yggdrasilAuthenticationService.hasJoined(username, serverId, ip)
+            return when (yggdrasilAuthenticationResult.reason) {
+                YggdrasilAuthenticationResult.Reason.NO_SERVICE ->
+                    disallowByYggdrasil(yggdrasilAuthenticationResult, "auth_failed_no_yggdrasil_service")
+
+                YggdrasilAuthenticationResult.Reason.SERVER_BREAKDOWN ->
+                    disallowByYggdrasil(yggdrasilAuthenticationResult, "auth_yggdrasil_failed_server_down")
+
+                YggdrasilAuthenticationResult.Reason.VALIDATION_FAILED ->
+                    disallowByYggdrasil(yggdrasilAuthenticationResult, "auth_yggdrasil_failed_validation_failed")
+
+                YggdrasilAuthenticationResult.Reason.ALLOWED -> {
+                    if (yggdrasilAuthenticationResult.response == null
+                        || yggdrasilAuthenticationResult.serviceConfig?.serviceId == -1
+                    ) {
+                        disallowByYggdrasil(yggdrasilAuthenticationResult, "auth_yggdrasil_failed_unknown")
+                    } else {
+                        checkIn(yggdrasilAuthenticationResult)
+                    }
+                }
             }
         } catch (e: Exception) {
             LoggerProvider.logger.error("An exception occurred while processing the hasJoined request.", e)
-            return LoginAuthResult.ofDisallowedByYggdrasilAuthenticator(
-                null,
-                core.languageHandler.getMessage("auth_yggdrasil_error")
-            )
+            return disallowByYggdrasil(null, "auth_yggdrasil_error")
         }
-
-        return checkIn(yggdrasilAuthenticationResult)
     }
 
     fun checkIn(baseServiceAuthenticationResult: BaseServiceAuthenticationResult): LoginAuthResult {
         try {
             val validateAuthenticationResult = validateAuthenticationService.checkIn(baseServiceAuthenticationResult)
-            if (validateAuthenticationResult.reason == ValidateAuthenticationResult.Reason.ALLOWED) {
-                val response = requireNotNull(baseServiceAuthenticationResult.response)
-                val serviceConfig = requireNotNull(baseServiceAuthenticationResult.serviceConfig)
-                LoggerProvider.logger.info(
-                    "%s(uuid: %s) from authentication service %s(sid: %d) has been authenticated, profile redirected to %s(uuid: %s).".format(
-                        response.name,
-                        response.id.toString(),
-                        serviceConfig.serviceName,
-                        serviceConfig.serviceId,
-                        validateAuthenticationResult.inGameProfile?.name,
-                        validateAuthenticationResult.inGameProfile?.id.toString()
-                    )
-                )
-                val finalProfile = requireNotNull(validateAuthenticationResult.inGameProfile)
-                core.playerHandler.loginCache[requireNotNull(finalProfile.id)] = PlayerHandler.Entry(
-                    response,
-                    serviceConfig,
-                    System.currentTimeMillis()
-                )
-                return LoginAuthResult.ofAllowed(
+            if (validateAuthenticationResult.reason != ValidateAuthenticationResult.Reason.ALLOWED) {
+                return LoginAuthResult.ofDisallowedByValidateAuthenticator(
                     baseServiceAuthenticationResult,
                     validateAuthenticationResult,
-                    finalProfile
+                    validateAuthenticationResult.disallowedMessage
                 )
             }
-            return LoginAuthResult.ofDisallowedByValidateAuthenticator(
+
+            val response = requireNotNull(baseServiceAuthenticationResult.response)
+            val serviceConfig = requireNotNull(baseServiceAuthenticationResult.serviceConfig)
+            val finalProfile = requireNotNull(validateAuthenticationResult.inGameProfile)
+
+            LoggerProvider.logger.info(
+                "%s(uuid: %s) from authentication service %s(sid: %d) has been authenticated, profile redirected to %s(uuid: %s).".format(
+                    response.name,
+                    response.id.toString(),
+                    serviceConfig.serviceName,
+                    serviceConfig.serviceId,
+                    finalProfile.name,
+                    finalProfile.id.toString()
+                )
+            )
+
+            core.playerHandler.loginCache[finalProfile.id] = PlayerHandler.Entry(
+                response,
+                serviceConfig,
+                System.currentTimeMillis()
+            )
+            return LoginAuthResult.ofAllowed(
                 baseServiceAuthenticationResult,
                 validateAuthenticationResult,
-                validateAuthenticationResult.disallowedMessage
+                finalProfile
             )
         } catch (e: Exception) {
             LoggerProvider.logger.error("An exception occurred while processing the validation request.", e)
@@ -98,4 +88,12 @@ class AuthHandler(private val core: MultiCore) : AuthAPI {
             )
         }
     }
+
+    private fun disallowByYggdrasil(
+        result: YggdrasilAuthenticationResult?,
+        messageKey: String
+    ): LoginAuthResult = LoginAuthResult.ofDisallowedByYggdrasilAuthenticator(
+        result,
+        core.languageHandler.getMessage(messageKey)
+    )
 }

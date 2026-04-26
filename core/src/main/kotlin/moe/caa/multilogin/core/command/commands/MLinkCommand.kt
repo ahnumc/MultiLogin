@@ -50,7 +50,7 @@ class MLinkCommand(private val handler: CommandHandler) {
 
     @Throws(CommandSyntaxException::class)
     private fun executeLinkCode(context: CommandContext<ISender?>): Int {
-        val self = requireNotNull(handler.requireDataCacheArgumentSelf(context).profile)
+        val self = handler.requireDataCacheArgumentSelf(context).profile
         val target = OnlinePlayerArgumentType.getPlayer(context, "player")
         val code = StringArgumentType.getString(context, "code")
         val sender = requireNotNull(context.source)
@@ -71,8 +71,8 @@ class MLinkCommand(private val handler: CommandHandler) {
         gameProfileEntryMap.remove(self)
 
         core.sqlManager.userDataTable.setInGameUUID(
-            requireNotNull(entry.requesterOnlineProfile.profile?.id),
-            requireNotNull(entry.requesterOnlineProfile.serviceId),
+            entry.requesterOnlineProfile.profile.id,
+            entry.requesterOnlineProfile.serviceId,
             entry.receiverUserInGameUUID
         )
         sender.sendMessagePL(
@@ -157,11 +157,11 @@ class MLinkCommand(private val handler: CommandHandler) {
             "redirect_name" to target.name,
             "redirect_uuid" to target.uniqueId
         ) {
-            gameProfileEntryMap[requireNotNull(self.profile)] = Entry(self, target.uniqueId)
+            gameProfileEntryMap[self.profile] = Entry(self, target.uniqueId)
             sender.sendMessagePL(
                 CommandHandler.core.languageHandler.getMessage(
                     "command_message_link",
-                    "self_online_name" to self.profile?.name
+                    "self_online_name" to self.profile.name
                 )
             )
         }

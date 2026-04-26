@@ -23,7 +23,7 @@ class YggdrasilAuthenticationResult(
     }
 
     companion object {
-        fun ofAllowed(response: GameProfile?, serviceConfig: BaseYggdrasilServiceConfig?): YggdrasilAuthenticationResult {
+        fun ofAllowed(response: GameProfile, serviceConfig: BaseYggdrasilServiceConfig): YggdrasilAuthenticationResult {
             return YggdrasilAuthenticationResult(Reason.ALLOWED, response, serviceConfig)
         }
 

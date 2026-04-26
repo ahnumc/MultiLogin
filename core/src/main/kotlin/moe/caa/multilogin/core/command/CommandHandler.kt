@@ -76,11 +76,11 @@ class CommandHandler(core: MultiCore) : CommandAPI {
         }
     }
 
-    fun literal(literal: String?): LiteralArgumentBuilder<ISender?> {
+    fun literal(literal: String): LiteralArgumentBuilder<ISender?> {
         return LiteralArgumentBuilder.literal<ISender?>(literal)
     }
 
-    fun <T> argument(name: String?, type: ArgumentType<T>?): RequiredArgumentBuilder<ISender?, T> {
+    fun <T> argument(name: String, type: ArgumentType<T>): RequiredArgumentBuilder<ISender?, T> {
         return RequiredArgumentBuilder.argument<ISender?, T>(name, type)
     }
 

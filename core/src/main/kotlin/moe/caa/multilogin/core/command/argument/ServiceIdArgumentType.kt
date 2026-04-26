@@ -30,7 +30,7 @@ class ServiceIdArgumentType private constructor() : ArgumentType<BaseServiceConf
     companion object {
         fun service(): ServiceIdArgumentType = ServiceIdArgumentType()
 
-        fun getService(context: CommandContext<*>, name: String?): BaseServiceConfig =
+        fun getService(context: CommandContext<*>, name: String): BaseServiceConfig =
             context.getArgument(name, BaseServiceConfig::class.java)
 
         @Throws(CommandSyntaxException::class)
@@ -55,7 +55,6 @@ class ServiceIdArgumentType private constructor() : ArgumentType<BaseServiceConf
         ): CompletableFuture<Suggestions?>? {
             CommandHandler.core.pluginConfig.serviceIdMap
                 .keys
-                .filterNotNull()
                 .forEach { key ->
                     if (key.toString().startsWith(builder.remainingLowerCase)) {
                         builder.suggest(key)

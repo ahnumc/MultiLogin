@@ -13,7 +13,7 @@ import java.sql.SQLException
  */
 class YggdrasilAuthenticationService(private val core: MultiCore) {
     @Throws(SQLException::class)
-    fun hasJoined(username: String?, serverId: String?, ip: String?): YggdrasilAuthenticationResult {
+    fun hasJoined(username: String, serverId: String, ip: String?): YggdrasilAuthenticationResult {
         val ids = core.pluginConfig.serviceIdMap.entries
             .filter { (_, v) -> v is BaseYggdrasilServiceConfig }
             .map { (k, _) -> k }
@@ -50,16 +50,14 @@ class YggdrasilAuthenticationService(private val core: MultiCore) {
     }
 
     private fun hasJoined0(
-        username: String?,
-        serverId: String?,
+        username: String,
+        serverId: String,
         ip: String?,
         ids: Set<Int>
     ): YggdrasilAuthenticationResult {
-        val resolvedUsername = requireNotNull(username)
-        val resolvedServerId = requireNotNull(serverId)
         val serviceConfigs = ids.mapNotNull { core.pluginConfig.serviceIdMap[it] as? BaseYggdrasilServiceConfig }
         val flows = EntrustFlows<HasJoinedContext?>(
-            serviceConfigs.map { YggdrasilAuthenticationFlows(core, resolvedUsername, resolvedServerId, ip, it) }
+            serviceConfigs.map { YggdrasilAuthenticationFlows(core, username, serverId, ip, it) }
         )
 
         val context = HasJoinedContext(username, serverId, ip)

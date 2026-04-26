@@ -105,7 +105,7 @@ class MWhitelistCommand(private val handler: CommandHandler) {
         val online = OnlineArgumentType.getOnline(context, "online")
         val sender = requireNotNull(context.source)
         val core = CommandHandler.core
-        if (online.whitelist == true) {
+        if (online.whitelist) {
             sender.sendMessagePL(
                 core.languageHandler.getMessage(
                     "command_message_whitelist_permanent_add_repeat",

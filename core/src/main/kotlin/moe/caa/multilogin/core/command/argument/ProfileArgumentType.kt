@@ -71,7 +71,7 @@ class ProfileArgumentType : ArgumentType<ProfileArgumentType.ProfileArgument> {
     companion object {
         fun profile(): ProfileArgumentType = ProfileArgumentType()
 
-        fun getProfile(context: CommandContext<*>, name: String?): ProfileArgument =
+        fun getProfile(context: CommandContext<*>, name: String): ProfileArgument =
             context.getArgument(name, ProfileArgument::class.java)
     }
 }

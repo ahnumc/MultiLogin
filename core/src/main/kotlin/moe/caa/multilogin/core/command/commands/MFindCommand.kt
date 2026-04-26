@@ -33,7 +33,7 @@ class MFindCommand(private val handler: CommandHandler) {
         val online = OnlineArgumentType.getOnline(context, "online")
         val sender = requireNotNull(context.source)
         val core = CommandHandler.core
-        val whitelist = if (online.whitelist == true) {
+        val whitelist = if (online.whitelist) {
             core.languageHandler.getMessage("command_message_find_online_whitelist_true")
         } else {
             core.languageHandler.getMessage("command_message_find_online_whitelist_false")
@@ -73,15 +73,15 @@ class MFindCommand(private val handler: CommandHandler) {
             ?: core.languageHandler.getMessage("command_message_find_profile_entry_unnamed")
 
         val delimiter = core.languageHandler.getMessage("command_message_find_profile_entry_delimiter")
-        val listStr = onlineProfiles.filterNotNull().joinToString(delimiter ?: "") { p ->
-            val serviceName = core.pluginConfig.serviceIdMap[p.third]?.serviceName
+        val listStr = onlineProfiles.joinToString(delimiter ?: "") { profileEntry ->
+            val serviceName = core.pluginConfig.serviceIdMap[profileEntry.serviceId]?.serviceName
                 ?: core.languageHandler.getMessage("command_message_find_profile_entry_unused_service")
             core.languageHandler.getMessage(
                 "command_message_find_profile_entry",
                 "service_name" to serviceName,
-                "service_id" to p.third,
-                "online_uuid" to p.first,
-                "online_name" to (p.second
+                "service_id" to profileEntry.serviceId,
+                "online_uuid" to profileEntry.onlineUUID,
+                "online_name" to (profileEntry.onlineName
                     ?: core.languageHandler.getMessage("command_message_find_profile_entry_onlineunnamed"))
             )
         }

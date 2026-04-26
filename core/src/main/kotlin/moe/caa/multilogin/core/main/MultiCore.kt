@@ -123,7 +123,7 @@ class MultiCore(override val plugin: IPlugin) : MultiCoreAPI, MultiLoginAPI {
         get() = requireNotNull(pluginConfig.mapperConfig)
 
     override val services: MutableCollection<BaseServiceConfig>
-        get() = pluginConfig.serviceIdMap.values.filterNotNull().toMutableList()
+        get() = pluginConfig.serviceIdMap.values.toMutableList()
 
     override fun getPlayerData(inGameUUID: UUID): MultiLoginPlayerData? {
         return playerHandler.getPlayerData(inGameUUID)

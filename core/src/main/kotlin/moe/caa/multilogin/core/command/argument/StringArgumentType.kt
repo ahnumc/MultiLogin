@@ -13,13 +13,10 @@ class StringArgumentType : ArgumentType<String> {
     }
 
     companion object {
-        fun string(): StringArgumentType {
-            return StringArgumentType()
-        }
+        fun string(): StringArgumentType = StringArgumentType()
 
-        fun getString(context: CommandContext<*>, name: String?): String {
-            return context.getArgument(name, String::class.java)
-        }
+        fun getString(context: CommandContext<*>, name: String): String =
+            context.getArgument(name, String::class.java)
 
         fun readString(reader: StringReader): String {
             val argBeginning = reader.getCursor()

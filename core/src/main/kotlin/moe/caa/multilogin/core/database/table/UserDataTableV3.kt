@@ -19,11 +19,23 @@ import java.util.*
  */
 class UserDataTableV3(
     private val sqlManager: SQLManager,
-    private val tableName: String?,
-    private val tableNameV2: String?
+    private val tableName: String,
+    private val tableNameV2: String
 ) {
     private val pool
-        get() = requireNotNull(sqlManager.pool)
+        get() = sqlManager.pool
+
+    data class OnlineRecord(
+        val onlineName: String?,
+        val inGameUUID: UUID?,
+        val whitelist: Boolean
+    )
+
+    data class LinkedProfile(
+        val onlineUUID: UUID,
+        val onlineName: String?,
+        val serviceId: Int
+    )
 
     @Throws(SQLException::class)
     fun init(connection: Connection) {
@@ -79,11 +91,11 @@ class UserDataTableV3(
     }
 
     @Throws(SQLException::class)
-    fun get(onlineUUID: UUID, serviceId: Int): Triple<String?, UUID?, Boolean?>? =
+    fun get(onlineUUID: UUID, serviceId: Int): OnlineRecord? =
         pool.query(
             "SELECT $fieldOnlineName, $fieldInGameProfileUuid, $fieldWhitelist FROM $tableName WHERE $fieldOnlineUUID = ? AND $fieldServiceId = ? LIMIT 1",
             { setBytes(1, uuidToBytes(onlineUUID)); setInt(2, serviceId) }
-        ) { Triple(getString(1), getBytes(2)?.let { bytesToUuid(it) }, getBoolean(3)) }
+        ) { OnlineRecord(getString(1), getBytes(2)?.let { bytesToUuid(it) }, getBoolean(3)) }
 
     @Throws(SQLException::class)
     fun getOnlineUUID(username: String, serviceId: Int): UUID? =
@@ -106,7 +118,7 @@ class UserDataTableV3(
      * 从数据库中检索用户登录时所用的账户验证服务器 ID
      */
     @Throws(SQLException::class)
-    fun getOnlineServiceIds(inGameUUID: UUID): Set<Int?> =
+    fun getOnlineServiceIds(inGameUUID: UUID): Set<Int> =
         pool.queryAll(
             "SELECT $fieldServiceId FROM $tableName WHERE $fieldInGameProfileUuid = ?",
             { setBytes(1, uuidToBytes(inGameUUID)) }
@@ -116,11 +128,17 @@ class UserDataTableV3(
      * 返回档案集合
      */
     @Throws(SQLException::class)
-    fun getOnlineProfiles(inGameUUID: UUID): Set<Triple<UUID?, String?, Int?>?> =
+    fun getOnlineProfiles(inGameUUID: UUID): Set<LinkedProfile> =
         pool.queryAll(
             "SELECT $fieldOnlineUUID, $fieldOnlineName, $fieldServiceId FROM $tableName WHERE $fieldInGameProfileUuid = ?",
             { setBytes(1, uuidToBytes(inGameUUID)) }
-        ) { Triple(getBytes(1)?.let { bytesToUuid(it) }, getString(2), getInt(3)) }.toSet()
+        ) {
+            LinkedProfile(
+                onlineUUID = requireNotNull(bytesToUuid(getBytes(1))) { "Online UUID is missing from user data." },
+                onlineName = getString(2),
+                serviceId = getInt(3)
+            )
+        }.toSet()
 
     /**
      * 设置游戏内 UUID

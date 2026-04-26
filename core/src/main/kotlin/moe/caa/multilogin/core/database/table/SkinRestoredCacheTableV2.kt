@@ -10,9 +10,9 @@ import java.text.MessageFormat
 /**
  * 皮肤修复缓存表
  */
-class SkinRestoredCacheTableV2(private val sqlManager: SQLManager, private val tableName: String?) {
+class SkinRestoredCacheTableV2(private val sqlManager: SQLManager, private val tableName: String) {
     private val pool
-        get() = requireNotNull(sqlManager.pool)
+        get() = sqlManager.pool
 
     @Throws(SQLException::class)
     fun init(connection: Connection) {

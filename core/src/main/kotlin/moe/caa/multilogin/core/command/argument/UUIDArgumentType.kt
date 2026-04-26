@@ -32,7 +32,7 @@ class UUIDArgumentType private constructor() : ArgumentType<UUID> {
     companion object {
         fun uuid(): UUIDArgumentType = UUIDArgumentType()
 
-        fun getUuid(context: CommandContext<*>, name: String?): UUID =
+        fun getUuid(context: CommandContext<*>, name: String): UUID =
             context.getArgument(name, UUID::class.java)
     }
 }

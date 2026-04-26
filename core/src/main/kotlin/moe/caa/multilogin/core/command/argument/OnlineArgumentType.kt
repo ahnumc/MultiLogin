@@ -56,7 +56,7 @@ class OnlineArgumentType : ArgumentType<OnlineArgumentType.OnlineArgument> {
                 ), reader
             )
         }
-        return OnlineArgument(serviceConfig, uuid, there.first, there.second, there.third)
+        return OnlineArgument(serviceConfig, uuid, there.onlineName, there.inGameUUID, there.whitelist)
     }
 
     override fun <S> listSuggestions(
@@ -71,13 +71,13 @@ class OnlineArgumentType : ArgumentType<OnlineArgumentType.OnlineArgument> {
         val onlineUUID: UUID,
         val onlineName: String?,
         val profileUUID: UUID?,
-        val whitelist: Boolean?
+        val whitelist: Boolean
     )
 
     companion object {
         fun online(): OnlineArgumentType = OnlineArgumentType()
 
-        fun getOnline(context: CommandContext<*>, name: String?): OnlineArgument =
+        fun getOnline(context: CommandContext<*>, name: String): OnlineArgument =
             context.getArgument(name, OnlineArgument::class.java)
     }
 }

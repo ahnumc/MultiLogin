@@ -67,8 +67,8 @@ class YggdrasilAuthenticationFlows(
     override fun run(context: HasJoinedContext?): Signal {
         val hasJoinedContext = requireNotNull(context)
         try {
-            val call = call()?.takeIf { it.id != null } ?: return Signal.TERMINATED
-            hasJoinedContext.response.set(call to config)
+            val profile = call() ?: return Signal.TERMINATED
+            hasJoinedContext.response.set(HasJoinedContext.AuthenticatedResponse(profile, config))
             return Signal.PASSED
         } catch (e: Throwable) {
             hasJoinedContext.serviceUnavailable[config] = e

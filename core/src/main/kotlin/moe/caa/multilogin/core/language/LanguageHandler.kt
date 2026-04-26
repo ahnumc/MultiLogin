@@ -23,7 +23,12 @@ class LanguageHandler(private val core: MultiCore) : LanguageAPI {
 
     @Throws(IOException::class)
     fun reload() {
-        val tmp = Properties()
+        val bundled = Properties()
+        (javaClass.getResourceAsStream("/message.properties")
+            ?: error("Resource not found: /message.properties")).use { resourceAsStream ->
+            bundled.load(InputStreamReader(resourceAsStream, StandardCharsets.UTF_8))
+        }
+
         val messagePropertiesFile = File(core.plugin.dataFolder, "message.properties")
         if (!messagePropertiesFile.exists()) {
             FileOutputStream(messagePropertiesFile).use { outputStream ->
@@ -33,19 +38,21 @@ class LanguageHandler(private val core: MultiCore) : LanguageAPI {
             LoggerProvider.logger.info("Extract: message.properties")
         }
 
+        val disk = Properties()
         FileInputStream(messagePropertiesFile).use { inputStream ->
-            tmp.load(InputStreamReader(inputStream, StandardCharsets.UTF_8))
+            disk.load(InputStreamReader(inputStream, StandardCharsets.UTF_8))
         }
-        (javaClass.getResourceAsStream("/message.properties")
-            ?: error("Resource not found: /message.properties")).use { resourceAsStream ->
-            InputStreamReader(resourceAsStream, StandardCharsets.UTF_8).use { isr ->
-                val inside = Properties()
-                inside.load(isr)
-                for (entry in inside.entries) {
-                    if (entry.key in tmp) continue
-                    tmp.setProperty(entry.key.toString(), entry.value.toString())
-                    LoggerProvider.logger.warn("Missing message from node ${entry.key}")
-                }
+
+        // bundled resource is source of truth; disk file provides overrides
+        val tmp = Properties()
+        for (entry in bundled.entries) {
+            val key = entry.key.toString()
+            val value = disk.getProperty(key)
+            if (value != null) {
+                tmp.setProperty(key, value)
+            } else {
+                tmp.setProperty(key, entry.value.toString())
+                LoggerProvider.logger.warn("Missing message from node $key")
             }
         }
         language = tmp

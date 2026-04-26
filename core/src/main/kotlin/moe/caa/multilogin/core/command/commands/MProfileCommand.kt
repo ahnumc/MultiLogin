@@ -110,13 +110,13 @@ class MProfileCommand(private val handler: CommandHandler) {
         val profile = ProfileArgumentType.getProfile(context, "profile")
         val pair = handler.requireDataCacheArgumentSelf(context)
 
-        processSet(context, pair.profile?.id, pair.profile?.name, requireNotNull(pair.serviceId), profile)
+        processSet(context, pair.profile.id, pair.profile.name, pair.serviceId, profile)
         return 0
     }
 
     private fun processSet(
         context: CommandContext<ISender?>,
-        from: UUID?,
+        from: UUID,
         fromName: String?,
         serviceId: Int,
         to: ProfileArgument
@@ -132,7 +132,7 @@ class MProfileCommand(private val handler: CommandHandler) {
             "online_uuid" to from,
             "online_name" to fromName
         ) {
-            core.sqlManager.userDataTable.setInGameUUID(requireNotNull(from), serviceId, to.profileUUID)
+            core.sqlManager.userDataTable.setInGameUUID(from, serviceId, to.profileUUID)
             sender.sendMessagePL(
                 core.languageHandler.getMessage(
                     "command_message_profile_set_succeed",

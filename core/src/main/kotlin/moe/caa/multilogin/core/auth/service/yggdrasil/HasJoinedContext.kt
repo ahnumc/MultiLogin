@@ -8,8 +8,12 @@ import java.util.concurrent.atomic.AtomicReference
 /**
  * HasJoined 验证上下文
  */
-class HasJoinedContext(val username: String?, val serverId: String?, val ip: String?) {
-    val response = AtomicReference<Pair<GameProfile?, BaseYggdrasilServiceConfig?>?>()
-    val serviceUnavailable: MutableMap<BaseYggdrasilServiceConfig?, Throwable?> = ConcurrentHashMap()
-    val authenticationFailed: MutableSet<Int?> = ConcurrentHashMap.newKeySet()
+class HasJoinedContext(val username: String, val serverId: String, val ip: String?) {
+    val response = AtomicReference<AuthenticatedResponse?>()
+    val serviceUnavailable: MutableMap<BaseYggdrasilServiceConfig, Throwable> = ConcurrentHashMap()
+
+    data class AuthenticatedResponse(
+        val profile: GameProfile,
+        val serviceConfig: BaseYggdrasilServiceConfig
+    )
 }
