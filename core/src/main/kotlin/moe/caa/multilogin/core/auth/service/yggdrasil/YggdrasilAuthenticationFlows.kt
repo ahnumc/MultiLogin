@@ -57,8 +57,10 @@ class YggdrasilAuthenticationFlows(
             .build()
         val call = client.newCall(request)
         call.execute().use { execute ->
-            val body = requireNotNull(execute.body) { "Yggdrasil response body is empty." }
-            return core.gson.decodeFromString(GameProfileSerializer, body.string())
+            val body = execute.body ?: return null
+            val text = body.string()
+            if (text.isBlank()) return null
+            return core.gson.decodeFromString(GameProfileSerializer, text)
         }
     }
 
