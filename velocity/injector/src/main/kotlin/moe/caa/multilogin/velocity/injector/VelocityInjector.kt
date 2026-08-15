@@ -7,6 +7,7 @@ import com.velocitypowered.proxy.protocol.StateRegistry.PacketRegistry
 import com.velocitypowered.proxy.protocol.StateRegistry.PacketRegistry.ProtocolRegistry
 import com.velocitypowered.proxy.protocol.packet.EncryptionResponsePacket
 import com.velocitypowered.proxy.protocol.packet.ServerLoginPacket
+import io.netty.util.collection.IntObjectMap
 import moe.caa.multilogin.api.internal.injector.Injector
 import moe.caa.multilogin.api.internal.main.MultiCoreAPI
 import moe.caa.multilogin.api.internal.util.reflect.NoSuchEnumException
@@ -14,6 +15,7 @@ import moe.caa.multilogin.api.internal.util.reflect.ReflectUtil.handleAccessible
 import moe.caa.multilogin.velocity.injector.handler.MultiInitialLoginSessionHandler
 import moe.caa.multilogin.velocity.injector.redirect.auth.MultiEncryptionResponse
 import moe.caa.multilogin.velocity.injector.redirect.auth.MultiServerLogin
+import moe.caa.multilogin.velocity.injector.redirect.chat.PlayerSessionPacketBlocker
 import java.lang.reflect.InvocationTargetException
 import java.util.function.Supplier
 
@@ -39,6 +41,21 @@ class VelocityInjector : Injector {
             ServerLoginPacket::class.java,
             Supplier { MultiServerLogin(api) }
         )
+        blockPlayerSessionPacket()
+    }
+
+    private fun blockPlayerSessionPacket() {
+        val packetIdToSupplierField = handleAccessible(
+            ProtocolRegistry::class.java.getDeclaredField("packetIdToSupplier")
+        )
+        for ((version, registry) in getProtocolRegistryMap(getServerboundPacketRegistry(StateRegistry.PLAY))) {
+            if (version.noLessThan(ProtocolVersion.MINECRAFT_26_1)) {
+                @Suppress("UNCHECKED_CAST")
+                val packets = packetIdToSupplierField.get(registry)
+                    as IntObjectMap<Supplier<out MinecraftPacket>>
+                packets.put(0x0A, Supplier { PlayerSessionPacketBlocker() })
+            }
+        }
     }
 
     private fun getServerboundPacketRegistry(stateRegistry: StateRegistry): PacketRegistry {
@@ -69,8 +86,12 @@ class VelocityInjector : Injector {
     }
 
     private fun getProtocolRegistries(bound: PacketRegistry): Collection<ProtocolRegistry> {
+        return getProtocolRegistryMap(bound).values
+    }
+
+    private fun getProtocolRegistryMap(bound: PacketRegistry): Map<ProtocolVersion, ProtocolRegistry> {
         val versionsField = handleAccessible(PacketRegistry::class.java.getDeclaredField("versions"))
         @Suppress("UNCHECKED_CAST")
-        return (versionsField.get(bound) as Map<ProtocolVersion, ProtocolRegistry>).values
+        return versionsField.get(bound) as Map<ProtocolVersion, ProtocolRegistry>
     }
 }
