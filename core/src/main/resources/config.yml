@@ -31,13 +31,6 @@ checkUpdate: true
 # 默认值 true
 forceUseLogin: true
 
-# floodgate 支持
-# 启用此闸门支持将会代理 floodgate 入口以让猫踢螺钉控制 floodgate 入口的玩家档案
-#
-# 警告：此功能将会使 floodgate 的账户连接功能失效，包括全球连接！
-# 默认组 false
-floodgateSupport: false
-
 # 设置用户名正则约束。
 # 若不匹配将会拒绝指令或当前玩家的登录请求。
 # 如果此值留空，则不启用此功能。
@@ -45,27 +38,10 @@ floodgateSupport: false
 # 默认值 ‘^[0-9a-zA-Z_]{3,16}$’
 nameAllowedRegular: '^[0-9a-zA-Z_]{3,16}$'
 
-# 在线档案在用户名重复时末尾是否补全数字以允许登录服务器
-# 意思是名字冲突了在它的名字后面加个数字
-# 比如 Steven 登录游戏后发现名字被别人占用了，那它在游戏里面的名字就为 Steven1
-#
-# 默认值 true
-nameCorrect: true
-
-# 当在线档案改名后是否自动 erase 老的档案用户名称并且分配在线档案用户名给当前档案使用（不忽略重名检查）
-#
-# 默认值 true
-autoNameChange: true
-
 # 风险指令二次确认过期时间设置
 #
 # 默认值 15000
 confirmCommandValidTimeMills: 15000
-
-# link指令接受过期时间设置
-#
-# 默认值 30000
-linkAcceptValidTimeMills: 30000
 
 # 插件数据设置
 sql:

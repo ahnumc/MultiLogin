@@ -4,8 +4,6 @@ import moe.caa.multilogin.api.service.IService
 import moe.caa.multilogin.api.service.ServiceType
 import moe.caa.multilogin.core.configuration.ConfException
 import moe.caa.multilogin.core.configuration.SkinRestorerConfig
-import java.nio.charset.StandardCharsets
-import java.util.*
 
 abstract class BaseServiceConfig protected constructor(
     override val serviceId: Int, override val serviceName: String, val initUUID: InitUUID?, val initNameFormat: String,
@@ -22,17 +20,7 @@ abstract class BaseServiceConfig protected constructor(
         )
     }
 
-    fun generateName(loginName: String): String {
-        return initNameFormat.replace("{name}", loginName).replace(" ", "_")
-    }
-
     abstract override val serviceType: ServiceType
 
-    enum class InitUUID(private val generator: (UUID?, String?) -> UUID?) {
-        DEFAULT({ u, _ -> u }),
-        OFFLINE({ _, n -> UUID.nameUUIDFromBytes("OfflinePlayer:$n".toByteArray(StandardCharsets.UTF_8)) }),
-        RANDOM({ _, _ -> UUID.randomUUID() });
-
-        fun generateUUID(onlineUUID: UUID?, currentUsername: String?): UUID? = generator(onlineUUID, currentUsername)
-    }
+    enum class InitUUID { DEFAULT }
 }

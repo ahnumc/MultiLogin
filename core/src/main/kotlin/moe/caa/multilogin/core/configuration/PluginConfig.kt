@@ -8,12 +8,10 @@ import moe.caa.multilogin.api.internal.util.IOUtil.removeAllFiles
 import moe.caa.multilogin.api.service.ServiceType
 import moe.caa.multilogin.core.configuration.service.BaseServiceConfig
 import moe.caa.multilogin.core.configuration.service.BaseServiceConfig.InitUUID
-import moe.caa.multilogin.core.configuration.service.FloodgateServiceConfig
 import moe.caa.multilogin.core.configuration.service.yggdrasil.BaseYggdrasilServiceConfig.HttpRequestMethod
 import moe.caa.multilogin.core.configuration.service.yggdrasil.BlessingSkinYggdrasilServiceConfig
 import moe.caa.multilogin.core.configuration.service.yggdrasil.CustomYggdrasilServiceConfig
 import moe.caa.multilogin.core.configuration.service.yggdrasil.OfficialYggdrasilServiceConfig
-import moe.caa.multilogin.core.main.MultiCore
 import org.spongepowered.configurate.CommentedConfigurationNode
 import org.spongepowered.configurate.serialize.SerializationException
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader
@@ -27,26 +25,14 @@ import java.util.jar.JarFile
 /**
  * 表示插件配置处理程序
  */
-class PluginConfig(private val dataFolder: File, private val core: MultiCore) {
+class PluginConfig(private val dataFolder: File) {
     var forceUseLogin = false
-        private set
-
-    var nameCorrect = false
         private set
 
     var checkUpdate = false
         private set
 
-    var floodgateSupport = false
-        private set
-
-    var autoNameChange = false
-        private set
-
     var sqlConfig: SqlConfig? = null
-        private set
-
-    var mapperConfig: MapperConfig? = null
         private set
 
     var nameAllowedRegular: String? = null
@@ -61,12 +47,6 @@ class PluginConfig(private val dataFolder: File, private val core: MultiCore) {
     var confirmCommandValidTimeMills: Long = 0
         private set
 
-    var linkAcceptValidTimeMills: Long = 0
-        private set
-
-    val floodgateAuthenticationService: FloodgateServiceConfig?
-        get() = serviceIdMap.values.filterIsInstance<FloodgateServiceConfig>().firstOrNull()
-
     @Throws(IOException::class, URISyntaxException::class)
     fun reload() {
         val servicesFolder = File(dataFolder, "services")
@@ -75,10 +55,7 @@ class PluginConfig(private val dataFolder: File, private val core: MultiCore) {
 
         removeAllFiles(File(dataFolder, "examples"))
         saveResource("config.yml", false)
-        saveResource("mapper.yml", false)
         saveResourceDir("examples", true)
-        mapperConfig?.save()
-        mapperConfig = MapperConfig(dataFolder).also { it.reload() }
 
         val configConfigurationNode =
             YamlConfigurationLoader.builder().file(File(dataFolder, "config.yml")).build().load()
@@ -89,12 +66,8 @@ class PluginConfig(private val dataFolder: File, private val core: MultiCore) {
         checkUpdate = configConfigurationNode.node("checkUpdate").getBoolean(true)
         sqlConfig = SqlConfig.read(configConfigurationNode.node("sql"))
         nameAllowedRegular = configConfigurationNode.node("nameAllowedRegular").getString("^[0-9a-zA-Z_]{3,16}$")
-        floodgateSupport = configConfigurationNode.node("floodgateSupport").getBoolean(false)
         welcomeMsg = configConfigurationNode.node("welcomeMsg").getBoolean(true)
-        nameCorrect = configConfigurationNode.node("nameCorrect").getBoolean(true)
-        autoNameChange = configConfigurationNode.node("autoNameChange").getBoolean(true)
         confirmCommandValidTimeMills = configConfigurationNode.node("confirmCommandValidTimeMills").getLong(15000)
-        linkAcceptValidTimeMills = configConfigurationNode.node("linkAcceptValidTimeMills").getLong(30000)
 
         val idMap = mutableMapOf<Int, BaseServiceConfig>()
         Files.list(servicesFolder.toPath()).use { list ->
@@ -128,17 +101,6 @@ class PluginConfig(private val dataFolder: File, private val core: MultiCore) {
                 idMap[config.serviceId] = config
             }
 
-            tmp.find { it.serviceType == ServiceType.FLOODGATE }?.let { fg ->
-                when {
-                    !core.floodgateSupported -> LoggerProvider.logger.warn(
-                        "Floodgate not detected, authentication service with id ${fg.serviceId} and name ${fg.serviceName} will be invalid."
-                    )
-
-                    !floodgateSupport -> LoggerProvider.logger.warn(
-                        "Floodgate support is not enabled, authentication service with id ${fg.serviceId} and name ${fg.serviceName} will be invalid."
-                    )
-                }
-            }
         }
 
         idMap.forEach { (id, serviceConfig) ->
@@ -168,6 +130,13 @@ class PluginConfig(private val dataFolder: File, private val core: MultiCore) {
         val whitelist = load.node("whitelist").getBoolean(false)
         val skinRestorer: SkinRestorerConfig = SkinRestorerConfig.read(load.node("skinRestorer"))
         val initNameFormat = load.node("initNameFormat").getString("{name}")
+
+        if (!serviceType.isYggdrasilService) {
+            throw ConfException("Only Yggdrasil authentication services are supported.")
+        }
+        if (initUUID != InitUUID.DEFAULT || initNameFormat != "{name}") {
+            throw ConfException("Secure profiles require initUUID DEFAULT and initNameFormat {name}.")
+        }
 
         if (serviceType.isYggdrasilService) {
             val yggdrasilAuthNode = load.node("yggdrasilAuth")
@@ -209,13 +178,7 @@ class PluginConfig(private val dataFolder: File, private val core: MultiCore) {
                         customNode.node("method").get(HttpRequestMethod::class.java, HttpRequestMethod.GET)
                     )
                 }
-
-                else -> throw ConfException("Unknown service type ${serviceType.name}")
             }
-        }
-
-        if (serviceType == ServiceType.FLOODGATE) {
-            return FloodgateServiceConfig(id, name, initUUID, initNameFormat, whitelist, skinRestorer)
         }
 
         throw ConfException("Unknown service type ${serviceType.name}")
@@ -254,8 +217,7 @@ class PluginConfig(private val dataFolder: File, private val core: MultiCore) {
 
     companion object {
         private val onlyOneServiceInfoMap: Map<ServiceType, String> = mapOf(
-            ServiceType.OFFICIAL to "official",
-            ServiceType.FLOODGATE to "floodgate"
+            ServiceType.OFFICIAL to "official"
         )
     }
 }

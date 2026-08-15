@@ -1,13 +1,24 @@
 package moe.caa.multilogin.core.auth.validate.entry
 
-import moe.caa.multilogin.api.internal.logger.LoggerProvider
 import moe.caa.multilogin.core.auth.validate.ValidateContext
-import moe.caa.multilogin.core.configuration.service.BaseServiceConfig
 import moe.caa.multilogin.core.main.MultiCore
 import moe.caa.multilogin.flows.workflows.BaseFlows
 import moe.caa.multilogin.flows.workflows.Signal
 import java.sql.SQLIntegrityConstraintViolationException
-import java.util.*
+import java.util.UUID
+
+internal enum class SecureIdentityMismatch { UUID, NAME }
+
+internal fun secureIdentityMismatch(
+    onlineUUID: UUID,
+    mappedUUID: UUID?,
+    onlineName: String,
+    mappedName: String?
+): SecureIdentityMismatch? = when {
+    mappedUUID != null && mappedUUID != onlineUUID -> SecureIdentityMismatch.UUID
+    !mappedName.isNullOrEmpty() && mappedName != onlineName -> SecureIdentityMismatch.NAME
+    else -> null
+}
 
 class AssignInGameFlows(private val core: MultiCore) : BaseFlows<ValidateContext?>() {
     @Throws(Exception::class)
@@ -19,102 +30,53 @@ class AssignInGameFlows(private val core: MultiCore) : BaseFlows<ValidateContext
         val onlineUUID = requireNotNull(response.id)
         val loginName = response.name
 
-        val resolvedInGameUUID = core.sqlManager.userDataTable.getInGameUUID(onlineUUID, serviceConfig.serviceId)
-            ?: allocateInGameUUID(onlineUUID, loginName, serviceConfig)
-        if (core.pluginConfig.autoNameChange && ctx.onlineNameUpdated) {
-            val username = core.sqlManager.inGameProfileTable.getUsername(resolvedInGameUUID)
-            username?.takeUnless(String::isEmpty)?.let { core.sqlManager.inGameProfileTable.eraseUsername(it) }
+        val mappedUUID = core.sqlManager.userDataTable.getInGameUUID(onlineUUID, serviceConfig.serviceId)
+        if (secureIdentityMismatch(onlineUUID, mappedUUID, loginName, null) == SecureIdentityMismatch.UUID) {
+            ctx.setDisallowMessage(
+                core.languageHandler.getMessage(
+                    "auth_validate_failed_uuid_mismatch",
+                    "online_uuid" to onlineUUID.toString(),
+                    "mapped_uuid" to mappedUUID.toString()
+                )
+            )
+            return Signal.TERMINATED
         }
 
-        val exist = core.sqlManager.inGameProfileTable.dataExists(resolvedInGameUUID)
+        if (mappedUUID == null) {
+            core.sqlManager.userDataTable.setInGameUUID(onlineUUID, serviceConfig.serviceId, onlineUUID)
+        }
+
+        val exist = core.sqlManager.inGameProfileTable.dataExists(onlineUUID)
         if (exist) {
-            val username = core.sqlManager.inGameProfileTable.getUsername(resolvedInGameUUID)
-            if (!username.isNullOrEmpty()) {
-                ctx.inGameProfile.id = resolvedInGameUUID
-                ctx.inGameProfile.name = username
-                return Signal.PASSED
-            }
-        }
-
-        var fixName = serviceConfig.generateName(loginName ?: "")
-        if (fixName.isEmpty()) fixName = "1"
-
-        val initFixName = fixName
-        if (core.pluginConfig.nameCorrect) {
-            var modified = false
-            var ownerUUID: UUID?
-            while ((core.sqlManager.inGameProfileTable.getInGameUUIDIgnoreCase(fixName)
-                    .also { ownerUUID = it }) != null
-            ) {
-                if (ownerUUID == resolvedInGameUUID) break
-                fixName = incrementString(fixName)
-                modified = true
-            }
-
-            if (modified) {
-                val finalFixName = fixName
-                LoggerProvider.logger.warn("The name $initFixName is occupied, change it to $fixName.")
-                core.plugin.runServer.scheduler.runTaskAsync({
-                    val player = core.plugin.runServer.playerManager.getPlayer(resolvedInGameUUID)
-                    player?.sendMessagePL(
-                        core.languageHandler.getMessage(
-                            "name_correct_info",
-                            "old_name" to initFixName,
-                            "new_name" to finalFixName
-                        )
+            val username = core.sqlManager.inGameProfileTable.getUsername(onlineUUID)
+            if (secureIdentityMismatch(onlineUUID, mappedUUID, loginName, username) == SecureIdentityMismatch.NAME) {
+                ctx.setDisallowMessage(
+                    core.languageHandler.getMessage(
+                        "auth_validate_failed_profile_name_mismatch",
+                        "online_name" to loginName,
+                        "mapped_name" to username
                     )
-                }, 2000)
+                )
+                return Signal.TERMINATED
             }
+            ctx.inGameProfile.id = onlineUUID
+            ctx.inGameProfile.name = loginName
+            return Signal.PASSED
         }
 
         return try {
-            if (exist) {
-                core.sqlManager.inGameProfileTable.updateUsername(resolvedInGameUUID, fixName)
-            } else {
-                core.sqlManager.inGameProfileTable.insertNewData(resolvedInGameUUID, fixName)
-            }
-            ctx.inGameProfile.id = resolvedInGameUUID
-            ctx.inGameProfile.name = fixName
+            core.sqlManager.inGameProfileTable.insertNewData(onlineUUID, loginName)
+            ctx.inGameProfile.id = onlineUUID
+            ctx.inGameProfile.name = loginName
             Signal.PASSED
         } catch (_: SQLIntegrityConstraintViolationException) {
             ctx.setDisallowMessage(
                 core.languageHandler.getMessage(
                     "auth_validate_failed_username_repeated",
-                    "name" to fixName
+                    "name" to loginName
                 )
             )
             Signal.TERMINATED
         }
-    }
-
-    private fun allocateInGameUUID(
-        onlineUUID: UUID,
-        loginName: String?,
-        serviceConfig: BaseServiceConfig
-    ): UUID {
-        var inGameUUID = requireNotNull(
-            requireNotNull(serviceConfig.initUUID).generateUUID(onlineUUID, loginName)
-        )
-
-        synchronized(AssignInGameFlows::class.java) {
-            while (core.sqlManager.inGameProfileTable.dataExists(inGameUUID)) {
-                LoggerProvider.logger.warn("UUID $inGameUUID has been used and will take a random value.")
-                inGameUUID = UUID.randomUUID()
-            }
-            core.sqlManager.userDataTable.setInGameUUID(onlineUUID, serviceConfig.serviceId, inGameUUID)
-        }
-
-        return inGameUUID
-    }
-
-    private fun incrementString(source: String): String {
-        if (source.isEmpty()) return "1"
-        val lastChar = source.last()
-        if (lastChar.isDigit()) {
-            val value = Character.getNumericValue(lastChar)
-            return if (value == 9) incrementString(source.dropLast(1)) + "0"
-            else source.dropLast(1) + (value + 1)
-        }
-        return "${source}1"
     }
 }

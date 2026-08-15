@@ -1,6 +1,5 @@
 package moe.caa.multilogin.api.internal.main
 
-import moe.caa.multilogin.api.MapperConfigAPI
 import moe.caa.multilogin.api.internal.auth.AuthAPI
 import moe.caa.multilogin.api.internal.command.CommandAPI
 import moe.caa.multilogin.api.internal.handle.HandlerAPI
@@ -22,6 +21,5 @@ interface MultiCoreAPI {
     val authHandler: AuthAPI
     val skinRestorerHandler: SkinRestorerAPI
     val playerHandler: HandlerAPI
-    val mapperConfig: MapperConfigAPI
     val plugin: IPlugin
 }

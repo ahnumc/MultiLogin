@@ -40,12 +40,8 @@ class RootCommand(private val handler: CommandHandler) {
                     .executes { this.executeList(it) }
             )
             .then(MWhitelistCommand(handler).register(handler.literal("whitelist")))
-            .then(MProfileCommand(handler).register(handler.literal("profile")))
-            .then(MRenameCommand(handler).register(handler.literal("rename")))
             .then(MFindCommand(handler).register(handler.literal("find")))
             .then(MInfoCommand(handler).register(handler.literal("info")))
-            .then(MLinkCommand(handler).register(handler.literal("link")))
-            .then(MDataConvert(handler).register(handler.literal("dataconvert")))
     }
 
     private fun executeList(context: CommandContext<ISender?>): Int {

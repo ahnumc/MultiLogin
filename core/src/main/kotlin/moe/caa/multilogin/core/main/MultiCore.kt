@@ -1,7 +1,6 @@
 package moe.caa.multilogin.core.main
 
 import kotlinx.serialization.json.Json
-import moe.caa.multilogin.api.MapperConfigAPI
 import moe.caa.multilogin.api.MultiLoginAPI
 import moe.caa.multilogin.api.MultiLoginAPIProvider.setApi
 import moe.caa.multilogin.api.data.MultiLoginPlayerData
@@ -9,7 +8,6 @@ import moe.caa.multilogin.api.internal.logger.LoggerProvider
 import moe.caa.multilogin.api.internal.main.MultiCoreAPI
 import moe.caa.multilogin.api.internal.plugin.IPlugin
 import moe.caa.multilogin.core.auth.AuthHandler
-import moe.caa.multilogin.core.auth.service.floodgate.FloodgateAuthenticationService
 import moe.caa.multilogin.core.command.CommandHandler
 import moe.caa.multilogin.core.configuration.PluginConfig
 import moe.caa.multilogin.core.configuration.service.BaseServiceConfig
@@ -31,7 +29,7 @@ import java.util.*
 class MultiCore(override val plugin: IPlugin) : MultiCoreAPI, MultiLoginAPI {
     val buildManifest: BuildManifest = BuildManifest(this)
     val sqlManager: SQLManager = SQLManager(this)
-    val pluginConfig: PluginConfig = PluginConfig(plugin.dataFolder, this)
+    val pluginConfig: PluginConfig = PluginConfig(plugin.dataFolder)
     override val authHandler: AuthHandler = AuthHandler(this)
     override val skinRestorerHandler: SkinRestorerCore = SkinRestorerCore(this)
     override val commandHandler: CommandHandler = CommandHandler(this)
@@ -40,21 +38,7 @@ class MultiCore(override val plugin: IPlugin) : MultiCoreAPI, MultiLoginAPI {
     val cacheWhitelistHandler: CacheWhitelistHandler = CacheWhitelistHandler()
     val gson: Json = Json { ignoreUnknownKeys = true }
     var semVersion: SemVersion? = null
-    var floodgateSupported = false
     val httpRequestHeaderUserAgent = "MultiLogin/v2.0"
-
-    private fun setupFloodgate() {
-        if (plugin.runServer.pluginHasEnabled("floodgate")) {
-            try {
-                FloodgateAuthenticationService(this).register()
-                LoggerProvider.logger.info("Floodgate detected, service registered.")
-                floodgateSupported = true
-            } catch (e: Throwable) {
-                floodgateSupported = false
-                LoggerProvider.logger.error("Unable to load floodgate handler, is it up to date?", e)
-            }
-        }
-    }
 
     private fun showBanner() {
         plugin.runServer.consoleSender.sendMessagePL("\u001b[40;31m __  __       _ _   _ _                _       \u001b[0m")
@@ -76,7 +60,6 @@ class MultiCore(override val plugin: IPlugin) : MultiCoreAPI, MultiLoginAPI {
         buildManifest.read()
         buildManifest.checkStable()
 
-        setupFloodgate()
         languageHandler.init()
         pluginConfig.reload()
         sqlManager.init()
@@ -121,9 +104,6 @@ class MultiCore(override val plugin: IPlugin) : MultiCoreAPI, MultiLoginAPI {
     override fun close() {
         sqlManager.close()
     }
-
-    override val mapperConfig: MapperConfigAPI
-        get() = requireNotNull(pluginConfig.mapperConfig)
 
     override val services: MutableCollection<BaseServiceConfig>
         get() = pluginConfig.serviceIdMap.values.toMutableList()

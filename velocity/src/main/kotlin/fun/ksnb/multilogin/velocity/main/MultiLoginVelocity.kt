@@ -1,21 +1,11 @@
 package `fun`.ksnb.multilogin.velocity.main
 
 import com.google.inject.Inject
-import com.velocitypowered.api.event.AwaitingEventExecutor
-import com.velocitypowered.api.event.EventTask
-import com.velocitypowered.api.event.PostOrder
 import com.velocitypowered.api.event.Subscribe
-import com.velocitypowered.api.event.connection.DisconnectEvent
-import com.velocitypowered.api.event.connection.PostLoginEvent
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.plugin.annotation.DataDirectory
-import com.velocitypowered.api.proxy.Player
 import com.velocitypowered.proxy.VelocityServer
-import com.velocitypowered.proxy.connection.client.ConnectedPlayer
-import com.velocitypowered.proxy.network.Connections
-import `fun`.ksnb.multilogin.velocity.impl.ChatSessionHandler
-import `fun`.ksnb.multilogin.velocity.impl.NewChatSessionPacketIDEvent
 import `fun`.ksnb.multilogin.velocity.logger.Slf4jLoggerBridge
 import moe.caa.multilogin.api.internal.injector.Injector
 import moe.caa.multilogin.api.internal.logger.LoggerProvider
@@ -56,7 +46,6 @@ class MultiLoginVelocity @Inject constructor(
             coreApi.load()
             injector = VelocityInjector()
             injector.inject(coreApi)
-            injector.registerChatSession(coreApi.mapperConfig.packetMapping)
         } catch (e: Throwable) {
             LoggerProvider.logger.error("An exception was encountered while loading the plugin.", e)
             server.shutdown()
@@ -65,43 +54,6 @@ class MultiLoginVelocity @Inject constructor(
         GlobalListener(this).register()
         CommandHandler(this).register("multilogin")
 
-        server.eventManager.register(
-            this, PostLoginEvent::class.java,
-            AwaitingEventExecutor { postLoginEvent: PostLoginEvent ->
-                EventTask.withContinuation { continuation ->
-                    try {
-                        if (postLoginEvent.player.protocolVersion.protocol < 761) return@withContinuation
-                        injectPlayer(postLoginEvent.player)
-                    } finally {
-                        continuation.resume()
-                    }
-                }
-            }
-        )
-        server.eventManager.register(
-            this, DisconnectEvent::class.java, PostOrder.LAST,
-            AwaitingEventExecutor { disconnectEvent: DisconnectEvent ->
-                if (disconnectEvent.loginStatus == DisconnectEvent.LoginStatus.CONFLICTING_LOGIN)
-                    null
-                else
-                    EventTask.async { removePlayer(disconnectEvent.player) }
-            }
-        )
-        server.eventManager.register(
-            this, NewChatSessionPacketIDEvent::class.java,
-            AwaitingEventExecutor { packetEvent: NewChatSessionPacketIDEvent ->
-                EventTask.withContinuation { continuation ->
-                    runServer.playerManager.kickPlayerIfOnline(
-                        packetEvent.player.uniqueId,
-                        coreApi.languageHandler.getMessage("reconnect_msg")
-                    )
-                    coreApi.mapperConfig.packetMapping[packetEvent.version.protocol] = packetEvent.packetID
-                    coreApi.mapperConfig.save()
-                    injector.registerChatSession(coreApi.mapperConfig.packetMapping)
-                    continuation.resume()
-                }
-            }
-        )
     }
 
     @Subscribe
@@ -122,26 +74,8 @@ class MultiLoginVelocity @Inject constructor(
     override val tempFolder: File
         get() = File(this.dataFolder, "tmp")
 
-    private fun injectPlayer(player: Player) {
-        val connectedPlayer = player as ConnectedPlayer
-        connectedPlayer.connection
-            .channel
-            .pipeline()
-            .addBefore(Connections.HANDLER, KEY, ChatSessionHandler(player, server.eventManager))
-    }
-
-    private fun removePlayer(player: Player) {
-        val connectedPlayer = player as ConnectedPlayer
-        val channel = connectedPlayer.connection.channel
-        channel.eventLoop().submit {
-            channel.pipeline().remove(KEY)
-        }
-    }
-
     companion object {
         private lateinit var instance: MultiLoginVelocity
-        private const val KEY = "MultiLoginChatSession"
-
         @JvmStatic
         fun getInstance(): MultiLoginVelocity = instance
     }

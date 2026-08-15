@@ -12,9 +12,8 @@ repositories {
 dependencies {
     compileOnly project(":api")
     compileOnly project(":flows")
-    compileOnly 'org.geysermc.floodgate:api:2.2.2-SNAPSHOT'
-    compileOnly 'org.geysermc.geyser:api:2.2.0-SNAPSHOT'
     compileOnly 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3'
+    testImplementation 'org.jetbrains.kotlin:kotlin-test'
 }
 
 java {

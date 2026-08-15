@@ -20,10 +20,5 @@ enum class ServiceType(val isYggdrasilService: Boolean) {
     /**
      * 自定义 Yggdrasil 伪正版验证服务（Yggdrasil 实现）。
      */
-    CUSTOM_YGGDRASIL(true),
-
-    /**
-     * Geyser 的 Floodgate （Xbox账号）验证服务。
-     */
-    FLOODGATE(false)
+    CUSTOM_YGGDRASIL(true)
 }

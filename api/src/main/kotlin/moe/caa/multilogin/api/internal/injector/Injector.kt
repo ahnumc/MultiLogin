@@ -13,5 +13,4 @@ interface Injector {
      */
     @Throws(Throwable::class)
     fun inject(api: MultiCoreAPI)
-    fun registerChatSession(packetMapping: MutableMap<Int, Int>)
 }
