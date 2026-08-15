@@ -2,6 +2,7 @@ name: Java CI
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -17,7 +18,9 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Build JAR
-        run: ./gradlew shadowJar
+        run: ./gradlew shadowJar --build-cache
