@@ -68,6 +68,9 @@ class MultiCore(override val plugin: IPlugin) : MultiCoreAPI, MultiLoginAPI {
     @Throws(IOException::class, SQLException::class, ClassNotFoundException::class, URISyntaxException::class)
     override fun load() {
         setApi(this)
+        if (!plugin.dataFolder.exists() && !plugin.dataFolder.mkdirs()) {
+            throw IOException("Unable to create plugin data folder: ${plugin.dataFolder}")
+        }
 
         showBanner()
         buildManifest.read()
