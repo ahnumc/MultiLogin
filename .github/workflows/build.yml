@@ -23,11 +23,12 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Build JAR
-        run: ./gradlew shadowJar --build-cache
+        run: ./gradlew :velocity:shadowJar --build-cache
 
       - name: Upload JAR
         uses: actions/upload-artifact@v7
         with:
           name: MultiLogin-Velocity
-          path: velocity/build/libs/*.jar
+          path: velocity/build/libs/MultiLogin-Velocity-*.jar
           if-no-files-found: error
+          archive: false
